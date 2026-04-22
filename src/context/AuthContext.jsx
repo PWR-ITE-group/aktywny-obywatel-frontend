@@ -15,8 +15,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = (email, password) => {
-        console.log('Login', email, password);
+    const login = async (email, password) => {
         const mockUser = { id: 1, email, role: 'user' };
         setUser(mockUser);
         setToken('mock-token');
