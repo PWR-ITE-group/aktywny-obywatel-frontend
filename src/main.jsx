@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Toaster } from 'react-hot-toast';
+import 'leaflet/dist/leaflet.css';
+import './utils/leafletIcons';
 import './index.css';
 import App from './App.jsx';
 import theme from './theme.js';
