@@ -20,7 +20,9 @@ const LoginPage = () => {
     const location = useLocation();
 
     // Po zalogowaniu wróć tam skąd przyszedł użytkownik, albo na dashboard
+    // Jeśli przeniesiono kategorię prewypełnioną, przekaż ją dalej
     const from = location.state?.from?.pathname || '/dashboard';
+    const prefilledCategory = location.state?.prefilledCategory || null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,7 +35,15 @@ const LoginPage = () => {
         try {
             await login(email, password);
             toast.success('Zalogowano pomyślnie!');
-            navigate(from, { replace: true });
+            // Jeśli istnieje prefilledCategory z logowania przez chip, przekaż ją do formularza zgłoszenia
+            if (prefilledCategory) {
+                navigate('/nowe-zgloszenie', {
+                    state: { prefilledCategory },
+                    replace: true
+                });
+            } else {
+                navigate(from, { replace: true });
+            }
         } catch {
             setError('Nieprawidłowy email lub hasło.');
         } finally {
