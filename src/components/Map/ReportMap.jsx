@@ -1,13 +1,10 @@
 import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Box, Typography, Chip, Button, Divider } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { WROCLAW_CENTER, DEFAULT_ZOOM, STATUS_COLORS, STATUS_LABELS } from '../../config/mapConfig';
+import { WROCLAW_CENTER, DEFAULT_ZOOM, STATUS_COLORS } from '../../config/mapConfig';
 import { createColoredIcon } from '../../utils/leafletIcons';
 
 // Komponent wymuszający resize mapy po zamontowaniu
-// (fix dla przypadku gdy mapa renderuje się w ukrytym kontenerze)
 const MapResizer = () => {
     const map = useMap();
     useEffect(() => {
@@ -16,13 +13,15 @@ const MapResizer = () => {
     return null;
 };
 
-const ReportMap = ({ reports = [], height = '100%' }) => {
+// Uwaga: w nowym designie nie używamy już leafletowych <Popup>.
+// Szczegóły pokazywane są w <PropertyBottomSheet> — stąd callback onMarkerClick.
+const ReportMap = ({ reports = [], height = '100%', onMarkerClick }) => {
     return (
         <MapContainer
             center={WROCLAW_CENTER}
             zoom={DEFAULT_ZOOM}
             style={{ height, width: '100%' }}
-            // Atrybucja OSM — wymagana zgodnie z licencją
+            zoomControl={false}
         >
             <MapResizer />
             <TileLayer
@@ -34,35 +33,10 @@ const ReportMap = ({ reports = [], height = '100%' }) => {
                     key={report.id}
                     position={[report.lat, report.lng]}
                     icon={createColoredIcon(STATUS_COLORS[report.status] ?? '#757575')}
-                >
-                    <Popup minWidth={220}>
-                        <Box sx={{ p: 0.5 }}>
-                            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                                {report.title}
-                            </Typography>
-                            <Chip
-                                label={STATUS_LABELS[report.status] ?? report.status}
-                                size="small"
-                                sx={{
-                                    bgcolor: STATUS_COLORS[report.status] ?? '#757575',
-                                    color: 'white',
-                                    fontWeight: 500,
-                                    mb: 1,
-                                }}
-                            />
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                {report.category}
-                            </Typography>
-                            <Divider sx={{ my: 0.5 }} />
-                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                {report.description}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Zgłoszono: {report.createdAt}
-                            </Typography>
-                        </Box>
-                    </Popup>
-                </Marker>
+                    eventHandlers={{
+                        click: () => onMarkerClick?.(report),
+                    }}
+                />
             ))}
         </MapContainer>
     );
