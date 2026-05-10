@@ -15,7 +15,7 @@ const RegisterPage = () => {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
-    const { login } = useAuth();
+    const { login, register } = useAuth();
     const navigate = useNavigate();
 
     const validate = () => {
@@ -45,8 +45,7 @@ const RegisterPage = () => {
         }
         setLoading(true);
         try {
-            // TODO: wywołać API rejestracji, na razie mockujemy jak login
-            await login(form.email, form.password);
+            await register(form.email, form.password, 0);
             toast.success('Konto zostało utworzone! Sprawdź email w celu weryfikacji.');
             navigate('/dashboard');
         } catch {
@@ -153,7 +152,7 @@ const RegisterPage = () => {
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="body2">
                             Masz już konto?{' '}
-                            <Link component={RouterLink} to="/login">
+                            <Link component={RouterLink} to="/logowanie">
                                 Zaloguj się
                             </Link>
                         </Typography>

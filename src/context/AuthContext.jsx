@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../config/api';
 
 const AuthContext = createContext();
 
@@ -16,11 +17,32 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (email, password) => {
-        const mockUser = { id: 1, email, role: 'user' };
-        setUser(mockUser);
-        setToken('mock-token');
-        localStorage.setItem('token', 'mock-token');
+        api.post('/api/auth/login', {
+            email: email, password: password
+        }).then((response) => {
+            console.log(response.data);
+            setUser(response.data);
+            setToken('mock-token');
+            localStorage.setItem('token', 'mock-token');
+        }).catch((error) => console.error(error))
+            .finally(() => console.log('Request complete'))
     };
+
+    const register = async (email, password, phoneNumber) => {
+        api.post("/api/auth/register", {
+            email: email, password: password, phoneNumber: phoneNumber
+        }).then((response) => {
+            console.log(response.data);
+            if (response.data.success) {
+                alert(response.data.data.verificationToken);
+                console.log("?token=" + response.data.data.verificationToken);
+            }
+        }).catch((error) => {
+            console.error(error);
+        }).finally(() => {
+            console.log("Request complete");
+        })
+    }
 
     const logout = () => {
         setUser(null);
@@ -29,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, token, login, logout, register, loading }}>
             {children}
         </AuthContext.Provider>
     );

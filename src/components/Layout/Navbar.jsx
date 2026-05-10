@@ -209,14 +209,14 @@ const Navbar = () => {
                             </>
                         ) : (
                             <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button color="inherit" component={RouterLink} to="/login">
+                                <Button color="inherit" component={RouterLink} to="/logowanie">
                                     Zaloguj się
                                 </Button>
                                 <Button
                                     variant="contained"
                                     color="secondary"
                                     component={RouterLink}
-                                    to="/register"
+                                    to="/rejestracja"
                                 >
                                     Zarejestruj się
                                 </Button>

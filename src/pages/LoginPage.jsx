@@ -130,7 +130,7 @@ const LoginPage = () => {
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="body2">
                             Nie masz konta?{' '}
-                            <Link component={RouterLink} to="/register">
+                            <Link component={RouterLink} to="/rejestracja">
                                 Zarejestruj się
                             </Link>
                         </Typography>
