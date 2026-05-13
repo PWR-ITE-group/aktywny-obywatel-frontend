@@ -17,15 +17,19 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (email, password) => {
-        api.post('/api/auth/login', {
+        return api.post('/api/auth/login', {
             email: email, password: password
         }).then((response) => {
             console.log(response.data);
-            setUser(response.data);
-            setToken('mock-token');
-            localStorage.setItem('token', 'mock-token');
-        }).catch((error) => console.error(error))
-            .finally(() => console.log('Request complete'))
+            if (response.data.success) {
+                setUser({ email: response.data.data.email, role: response.data.data.role });
+                setToken(response.data.data.token);
+                localStorage.setItem('token', response.data.data.token);
+            }
+            return response.data;
+        }).catch((error) => {
+            return { success: error.response?.data?.success || false, message: error.response?.data?.message || "Błąd serwera" };
+        });
     };
 
     const register = async (email, password, phoneNumber) => {
@@ -34,13 +38,10 @@ export const AuthProvider = ({ children }) => {
         }).then((response) => {
             console.log(response.data);
             if (response.data.success) {
-                alert(response.data.data.verificationToken);
-                console.log("?token=" + response.data.data.verificationToken);
+                console.log(window.location.origin + "/weryfikacja?token=" + response.data.data.verificationToken);
             }
         }).catch((error) => {
             console.error(error);
-        }).finally(() => {
-            console.log("Request complete");
         })
     }
 

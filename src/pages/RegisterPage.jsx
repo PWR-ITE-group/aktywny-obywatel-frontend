@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
-    const [form, setForm] = useState({ email: '', password: '', confirmPassword: '' });
+    const [form, setForm] = useState({ email: '', phone: '', password: '', confirmPassword: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -22,6 +22,8 @@ const RegisterPage = () => {
         const e = {};
         if (!form.email) e.email = 'Email jest wymagany.';
         else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Nieprawidłowy format emaila.';
+        if (!form.phone) e.phone = 'Numer telefonu jest wymagany.';
+        else if (!/^\+?[1-9]\d{1,14}$/.test(form.phone.replace(/\s/g, ''))) e.phone = 'Nieprawidłowy format numeru telefonu.';
         if (!form.password) e.password = 'Hasło jest wymagane.';
         else if (form.password.length < 8) e.password = 'Hasło musi mieć co najmniej 8 znaków.';
         else if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(form.password))
@@ -45,7 +47,7 @@ const RegisterPage = () => {
         }
         setLoading(true);
         try {
-            await register(form.email, form.password, 0);
+            await register(form.email, form.password, form.phone);
             toast.success('Konto zostało utworzone! Sprawdź email w celu weryfikacji.');
             navigate('/dashboard');
         } catch {
@@ -95,6 +97,18 @@ const RegisterPage = () => {
                         required
                         error={Boolean(errors.email)}
                         helperText={errors.email}
+                    />
+                    <TextField
+                        fullWidth
+                        label="Numer telefonu"
+                        type="tel"
+                        value={form.phone}
+                        onChange={handleChange('phone')}
+                        margin="normal"
+                        autoComplete="tel"
+                        required
+                        error={Boolean(errors.phone)}
+                        helperText={errors.phone || 'np. +48123456789'}
                     />
                     <TextField
                         fullWidth
