@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children, requiredRole = 'user' }) => {
 
     if (!user) {
         // zapamiętaj skąd przyszedł, żeby po logowaniu wrócić
-        return <Navigate to="/login" state={{ from: location }} replace />;
+        return <Navigate to="/logowanie" state={{ from: location }} replace />;
     }
 
     if (requiredRole === 'admin' && user.role !== 'admin') {

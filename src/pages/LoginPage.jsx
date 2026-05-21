@@ -33,19 +33,25 @@ const LoginPage = () => {
         setError('');
         setLoading(true);
         try {
-            await login(email, password);
-            toast.success('Zalogowano pomyślnie!');
-            // Jeśli istnieje prefilledCategory z logowania przez chip, przekaż ją do formularza zgłoszenia
-            if (prefilledCategory) {
-                navigate('/nowe-zgloszenie', {
-                    state: { prefilledCategory },
-                    replace: true
-                });
-            } else {
-                navigate(from, { replace: true });
+            const result = await login(email, password);
+            if (result.success) {
+                toast.success('Zalogowano pomyślnie!');
+                // Jeśli istnieje prefilledCategory z logowania przez chip, przekaż ją do formularza zgłoszenia
+                if (prefilledCategory) {
+                    navigate('/nowe-zgloszenie', {
+                        state: { prefilledCategory },
+                        replace: true
+                    });
+                } else {
+                    navigate(from, { replace: true });
+                }
             }
-        } catch {
-            setError('Nieprawidłowy email lub hasło.');
+            else {
+                setError(result.message);
+            }
+        } catch (err) {
+            console.log(err);
+            setError('Błąd logowania');
         } finally {
             setLoading(false);
         }
@@ -130,7 +136,7 @@ const LoginPage = () => {
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="body2">
                             Nie masz konta?{' '}
-                            <Link component={RouterLink} to="/register">
+                            <Link component={RouterLink} to="/rejestracja">
                                 Zarejestruj się
                             </Link>
                         </Typography>
