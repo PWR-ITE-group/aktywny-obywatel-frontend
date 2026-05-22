@@ -33,18 +33,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (email, password, phoneNumber) => {
-        api.post("/api/auth/register", {
+        return api.post("/api/auth/register", {
             email: email, password: password, phoneNumber: phoneNumber
         }).then((response) => {
             console.log(response.data);
             if (response.data.success) {
                 console.log(window.location.origin + "/weryfikacja?token=" + response.data.data.verificationToken);
             }
+            return response.data;
         }).catch((error) => {
             console.error(error);
-        })
-    }
-
+            throw error;
+        });
+    };
     const logout = () => {
         setUser(null);
         setToken(null);
