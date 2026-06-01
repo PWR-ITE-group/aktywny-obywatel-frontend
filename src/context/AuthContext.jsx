@@ -9,11 +9,15 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
 
     useEffect(() => {
-        const savedToken = localStorage.getItem('token');
-        if (savedToken) {
-            setToken(savedToken);
-        }
-        setLoading(false);
+        const initializeAuth = async () => {
+            const savedToken = localStorage.getItem('token');
+            if (savedToken) {
+                setToken(savedToken);
+            }
+            setLoading(false);
+        };
+
+        initializeAuth();
     }, []);
 
     const login = async (email, password) => {

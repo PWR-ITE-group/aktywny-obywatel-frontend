@@ -7,6 +7,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { emailSchema, passwordSchema } from '../utils/reportSchemas';
+import { userService } from '../services/userService';
+import { authService } from '../services/authService';
 
 // WF-13: wybór kanałów powiadomień. WF-14: edycja danych konta.
 // WF-17: żądanie usunięcia konta (dane usuwane po zamknięciu zgłoszeń).
@@ -47,19 +49,29 @@ const AccountDataTab = ({ user }) => {
     });
     const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' });
     const [errors, setErrors] = useState({});
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [passwordLoading, setPasswordLoading] = useState(false);
 
-    const saveProfile = () => {
+    const saveProfile = async () => {
         const emailResult = emailSchema.safeParse(form.email);
         if (!emailResult.success) {
             setErrors({ email: emailResult.error.issues[0].message });
             return;
         }
         setErrors({});
-        // TODO: wywołanie API — userService.updateProfile(form)
-        toast.success('Zapisano dane konta.');
+        setProfileLoading(true);
+        try {
+            await userService.updateProfile(form);
+            toast.success('Zapisano dane konta.');
+        } catch (err) {
+            toast.error('Nie udało się zapisać danych konta.');
+            console.error(err);
+        } finally {
+            setProfileLoading(false);
+        }
     };
 
-    const changePassword = () => {
+    const changePassword = async () => {
         const errs = {};
         const nextResult = passwordSchema.safeParse(pwd.next);
         if (!nextResult.success) errs.next = nextResult.error.issues[0].message;
@@ -67,9 +79,17 @@ const AccountDataTab = ({ user }) => {
         if (!pwd.current) errs.current = 'Wpisz aktualne hasło.';
         if (Object.keys(errs).length > 0) { setErrors(errs); return; }
         setErrors({});
-        // TODO: authService.changePassword(pwd.current, pwd.next)
-        toast.success('Hasło zmienione.');
-        setPwd({ current: '', next: '', confirm: '' });
+        setPasswordLoading(true);
+        try {
+            await authService.changePassword(pwd.current, pwd.next);
+            toast.success('Hasło zmienione.');
+            setPwd({ current: '', next: '', confirm: '' });
+        } catch (err) {
+            toast.error('Nie udało się zmienić hasła.');
+            console.error(err);
+        } finally {
+            setPasswordLoading(false);
+        }
     };
 
     return (
@@ -108,8 +128,8 @@ const AccountDataTab = ({ user }) => {
                         fullWidth
                     />
                     <Box>
-                        <Button variant="contained" onClick={saveProfile}>
-                            Zapisz zmiany
+                        <Button variant="contained" onClick={saveProfile} disabled={profileLoading}>
+                            {profileLoading ? 'Zapisywanie...' : 'Zapisz zmiany'}
                         </Button>
                     </Box>
                 </Stack>
@@ -151,8 +171,8 @@ const AccountDataTab = ({ user }) => {
                         fullWidth
                     />
                     <Box>
-                        <Button variant="outlined" onClick={changePassword}>
-                            Zmień hasło
+                        <Button variant="outlined" onClick={changePassword} disabled={passwordLoading}>
+                            {passwordLoading ? 'Zmienianie...' : 'Zmień hasło'}
                         </Button>
                     </Box>
                 </Stack>
@@ -173,10 +193,19 @@ const NotificationsTab = () => {
         authorityReply: true,
         weeklyDigest: false,
     });
+    const [saving, setSaving] = useState(false);
 
-    const save = () => {
-        // TODO: userService.updateNotificationPreferences({ channels, events })
-        toast.success('Zapisano ustawienia powiadomień.');
+    const save = async () => {
+        setSaving(true);
+        try {
+            await userService.updateNotificationPreferences({ channels, events });
+            toast.success('Zapisano ustawienia powiadomień.');
+        } catch (err) {
+            toast.error('Nie udało się zapisać ustawień powiadomień.');
+            console.error(err);
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -249,8 +278,8 @@ const NotificationsTab = () => {
             </Stack>
 
             <Box sx={{ mt: 3 }}>
-                <Button variant="contained" onClick={save}>
-                    Zapisz preferencje
+                <Button variant="contained" onClick={save} disabled={saving}>
+                    {saving ? 'Zapisywanie...' : 'Zapis preferencje'}
                 </Button>
             </Box>
         </Paper>
@@ -261,12 +290,21 @@ const NotificationsTab = () => {
 const PrivacyTab = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmText, setConfirmText] = useState('');
+    const [deletionLoading, setDeletionLoading] = useState(false);
 
-    const requestDeletion = () => {
-        // TODO: userService.requestAccountDeletion()
-        toast.success('Prośba o usunięcie konta została zarejestrowana.');
-        setConfirmOpen(false);
-        setConfirmText('');
+    const requestDeletion = async () => {
+        setDeletionLoading(true);
+        try {
+            await userService.requestAccountDeletion();
+            toast.success('Prośba o usunięcie konta została zarejestrowana.');
+            setConfirmOpen(false);
+            setConfirmText('');
+        } catch (err) {
+            toast.error('Nie udało się wysłać prośby o usunięcie konta.');
+            console.error(err);
+        } finally {
+            setDeletionLoading(false);
+        }
     };
 
     return (
@@ -301,7 +339,7 @@ const PrivacyTab = () => {
                         color="error"
                         onClick={() => setConfirmOpen(true)}
                     >
-                        Usuń moje konto
+                        {deletionLoading ? 'Wysyłanie...' : 'Usuń moje konto'}
                     </Button>
                 </Paper>
             </Stack>

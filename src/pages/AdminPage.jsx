@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Container, Box, Tabs, Tab, Paper, Stack, Typography, Button, Chip, TextField,
     Table, TableHead, TableBody, TableRow, TableCell, IconButton, Select, MenuItem,
@@ -13,6 +13,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS, CATEGORIES } from '../config/mapConfig';
 import toast from 'react-hot-toast';
+import { adminService } from '../services/adminService';
 
 // Panel administratora (WF-18–24).
 // W prototypie operacje są lokalne — docelowo adminService.* z backendu.
@@ -50,36 +51,110 @@ const ReportsTab = () => {
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [editDialog, setEditDialog] = useState(null);
-    const [reports, setReports] = useState(MOCK_REPORTS);
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const filtered = useMemo(
-        () => reports.filter((r) => {
+    useEffect(() => {
+        const fetchReports = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const filters = {};
+                if (statusFilter) filters.status = statusFilter;
+                if (query) filters.search = query;
+                const response = await adminService.getAllReports(filters);
+                if (response.success) {
+                    setReports(response.data);
+                } else {
+                    throw new Error(response.message || 'Failed to fetch reports');
+                }
+            } catch (err) {
+                setError(err.message);
+                console.error('Error fetching reports:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchReports();
+    }, [query, statusFilter]);
+
+    const filtered = useMemo(() => {
+        return reports.filter((r) => {
             if (statusFilter && r.status !== statusFilter) return false;
             if (query && !r.title.toLowerCase().includes(query.toLowerCase())) return false;
             return true;
-        }),
-        [reports, query, statusFilter]
-    );
+        });
+    }, [reports, query, statusFilter]);
 
-    const exportCSV = () => {
-        // WF-23: eksport zgłoszeń do CSV
-        const headers = ['id', 'title', 'category', 'status', 'lat', 'lng', 'createdAt'];
-        const rows = filtered.map((r) => headers.map((h) => JSON.stringify(r[h] ?? '')).join(','));
-        const csv = [headers.join(','), ...rows].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
+    const exportCSV = async () => {
+        try {
+            const filters = {};
+            if (statusFilter) filters.status = statusFilter;
+            if (query) filters.search = query;
+            const response = await adminService.exportReportsCSV(filters);
+            if (response.success && response.data) {
+                const blob = new Blob([response.data.csvContent], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
+            } else {
+                throw new Error(response.message || 'Failed to export CSV');
+            }
+        } catch (err) {
+            toast.error('Nie udało się wyeksportować zgłoszeń.');
+            console.error('Error exporting CSV:', err);
+        }
     };
 
-    const updateStatus = (id, newStatus) => {
-        setReports((rs) => rs.map((r) => r.id === id ? { ...r, status: newStatus } : r));
-        toast.success('Zmieniono status zgłoszenia.');
+    const updateStatus = async (id, newStatus) => {
+        try {
+            const response = await adminService.updateReportStatus(id, newStatus);
+            if (response.success) {
+                toast.success('Zmieniono status zgłoszenia.');
+                // Optionally, refetch the reports to ensure we have the latest data
+                // But for simplicity, we'll update optimistically
+                setReports(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+                setEditDialog(null);
+            } else {
+                throw new Error(response.message || 'Failed to update status');
+            }
+        } catch (err) {
+            toast.error('Nie udało się zmienić statusu zgłoszenia.');
+            console.error('Error updating report status:', err);
+        }
     };
+
+    if (loading) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" align="center" sx={{ py: 4 }}>
+                    Ładowanie zgłoszeń...
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (error) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" color="error.main" align="center" sx={{ py: 4 }}>
+                    {error}
+                </Typography>
+                <Button variant="outlined" onClick={() => {
+                    setError(null);
+                    // Trigger a refetch
+                }}>
+                    Spróbuj ponownie
+                </Button>
+            </Paper>
+        );
+    }
 
     return (
         <Paper sx={{ p: 2 }}>
@@ -140,9 +215,9 @@ const ReportsTab = () => {
                                 <TableCell>{r.category}</TableCell>
                                 <TableCell>
                                     <Chip
-                                        label={STATUS_LABELS[r.status]}
+                                        label={r.statusLabel || r.status}
                                         size="small"
-                                        sx={{ bgcolor: STATUS_COLORS[r.status], color: 'white' }}
+                                        sx={{ bgcolor: r.statusColor || '#9E9E9E', color: 'white' }}
                                     />
                                 </TableCell>
                                 <TableCell>{r.createdAt}</TableCell>
@@ -203,9 +278,70 @@ const ReportsTab = () => {
 
 // --- Tab: Routing (WF-18) ---
 const RoutingTab = () => {
-    const [routing, setRouting] = useState(
-        CATEGORIES.map((c) => ({ category: c, department: '', channel: 'api' }))
-    );
+    const [routing, setRouting] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchRouting = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await adminService.getRoutingRules();
+                if (response.success) {
+                    setRouting(response.data);
+                } else {
+                    throw new Error(response.message || 'Failed to fetch routing rules');
+                }
+            } catch (err) {
+                setError(err.message);
+                console.error('Error fetching routing rules:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRouting();
+    }, []);
+
+    const saveRouting = async () => {
+        try {
+            const response = await adminService.updateRoutingRules(routing);
+            if (response.success) {
+                toast.success('Zapisano konfigurację routingu.');
+            } else {
+                throw new Error(response.message || 'Failed to save routing rules');
+            }
+        } catch (err) {
+            toast.error('Nie udało się zapisać konfiguracji routingu.');
+            console.error('Error saving routing rules:', err);
+        }
+    };
+
+    if (loading) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" align="center" sx={{ py: 4 }}>
+                    Ładowanie konfiguracji routingu...
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (error) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" color="error.main" align="center" sx={{ py: 4 }}>
+                    {error}
+                </Typography>
+                <Button variant="outlined" onClick={() => {
+                    setError(null);
+                }}>
+                    Spróbuj ponownie
+                </Button>
+            </Paper>
+        );
+    }
 
     return (
         <Paper sx={{ p: 2 }}>
@@ -254,8 +390,8 @@ const RoutingTab = () => {
                                 </Select>
                             </TableCell>
                             <TableCell align="right">
-                                <Button size="small" onClick={() => toast.success(`Zapisano: ${row.category}`)}>
-                                    Zapisz
+                                <Button size="small" variant="contained" onClick={saveRouting}>
+                                    Zapisz wszystko
                                 </Button>
                             </TableCell>
                         </TableRow>
@@ -268,17 +404,107 @@ const RoutingTab = () => {
 
 // --- Tab: Wydziały (WF-19) ---
 const DepartmentsTab = () => {
-    const [departments, setDepartments] = useState([
-        { id: 1, name: 'ZDiUM', email: 'zdium@um.wroc.pl', apiUrl: 'https://mock-urzad.local/zdium' },
-        { id: 2, name: 'ZZM',   email: 'zzm@um.wroc.pl',   apiUrl: '' },
-        { id: 3, name: 'MPWiK', email: 'mpwik@um.wroc.pl', apiUrl: 'https://mock-urzad.local/mpwik' },
-    ]);
+    const [departments, setDepartments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [dialog, setDialog] = useState(null);
 
-    const remove = (id) => {
-        setDepartments((ds) => ds.filter((d) => d.id !== id));
-        toast.success('Usunięto wydział.');
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await adminService.getDepartments();
+                if (response.success) {
+                    setDepartments(response.data);
+                } else {
+                    throw new Error(response.message || 'Failed to fetch departments');
+                }
+            } catch (err) {
+                setError(err.message);
+                console.error('Error fetching departments:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDepartments();
+    }, []);
+
+    const remove = async (id) => {
+        try {
+            const response = await adminService.deleteDepartment(id);
+            if (response.success) {
+                toast.success('Usunięto wydział.');
+                // Optionally, refetch the departments
+                setDepartments(prev => prev.filter(d => d.id !== id));
+            } else {
+                throw new Error(response.message || 'Failed to delete department');
+            }
+        } catch (err) {
+            toast.error('Nie udało się usunąć wydziału.');
+            console.error('Error deleting department:', err);
+        }
     };
+
+    const createDepartment = async (departmentData) => {
+        try {
+            const response = await adminService.createDepartment(departmentData);
+            if (response.success) {
+                toast.success('Dodano wydział.');
+                setDialog(null);
+                // Optionally, refetch the departments
+                setDepartments(prev => [...prev, { ...response.data, id: response.data.id }]);
+            } else {
+                throw new Error(response.message || 'Failed to create department');
+            }
+        } catch (err) {
+            toast.error('Nie udało się dodać wydziału.');
+            console.error('Error creating department:', err);
+        }
+    };
+
+    const updateDepartment = async (id, departmentData) => {
+        try {
+            const response = await adminService.updateDepartment(id, departmentData);
+            if (response.success) {
+                toast.success('Zaktualizowano wydział.');
+                setDialog(null);
+                // Optionally, refetch the departments
+                setDepartments(prev => prev.map(d => d.id === id ? { ...d, ...departmentData } : d));
+            } else {
+                throw new Error(response.message || 'Failed to update department');
+            }
+        } catch (err) {
+            toast.error('Nie udało się zaktualizować wydziału.');
+            console.error('Error updating department:', err);
+        }
+    };
+
+    if (loading) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" align="center" sx={{ py: 4 }}>
+                    Ładowanie wydziałów...
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (error) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" color="error.main" align="center" sx={{ py: 4 }}>
+                    {error}
+                </Typography>
+                <Button variant="outlined" onClick={() => {
+                    setError(null);
+                }}>
+                    Spróbuj ponownie
+                </Button>
+            </Paper>
+        );
+    }
 
     return (
         <Paper sx={{ p: 2 }}>
@@ -312,7 +538,9 @@ const DepartmentsTab = () => {
                                 {d.apiUrl || <i style={{ color: '#9CA3AF' }}>brak — użyje email</i>}
                             </TableCell>
                             <TableCell align="right">
-                                <IconButton size="small" onClick={() => setDialog(d)}>
+                                <IconButton size="small" onClick={() => {
+                                    setDialog({ id: d.id, name: d.name, email: d.email, apiUrl: d.apiUrl });
+                                }}>
                                     <EditIcon fontSize="small" />
                                 </IconButton>
                                 <IconButton size="small" onClick={() => remove(d.id)} color="error">
@@ -355,12 +583,18 @@ const DepartmentsTab = () => {
                         variant="contained"
                         onClick={() => {
                             if (dialog.id) {
-                                setDepartments((ds) => ds.map((d) => d.id === dialog.id ? dialog : d));
+                                updateDepartment(dialog.id, {
+                                    name: dialog.name,
+                                    email: dialog.email,
+                                    apiUrl: dialog.apiUrl
+                                });
                             } else {
-                                setDepartments((ds) => [...ds, { ...dialog, id: Date.now() }]);
+                                createDepartment({
+                                    name: dialog.name,
+                                    email: dialog.email,
+                                    apiUrl: dialog.apiUrl
+                                });
                             }
-                            toast.success('Zapisano.');
-                            setDialog(null);
                         }}
                     >
                         Zapisz
@@ -373,39 +607,95 @@ const DepartmentsTab = () => {
 
 // --- Tab: Statystyki (WF-22) ---
 const StatsTab = () => {
-    const total = MOCK_REPORTS.length;
-    const byStatus = useMemo(() => {
-        const acc = {};
-        for (const r of MOCK_REPORTS) acc[r.status] = (acc[r.status] ?? 0) + 1;
-        return acc;
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await adminService.getStats();
+                if (response.success) {
+                    setStats(response.data);
+                } else {
+                    throw new Error(response.message || 'Failed to fetch statistics');
+                }
+            } catch (err) {
+                setError(err.message);
+                console.error('Error fetching statistics:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
     }, []);
-    const byCategory = useMemo(() => {
-        const acc = {};
-        for (const r of MOCK_REPORTS) acc[r.category] = (acc[r.category] ?? 0) + 1;
-        return acc;
-    }, []);
+
+    if (loading) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" align="center" sx={{ py: 4 }}>
+                    Ładowanie statystyk...
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (error) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" color="error.main" align="center" sx={{ py: 4 }}>
+                    {error}
+                </Typography>
+                <Button variant="outlined" onClick={() => {
+                    setError(null);
+                }}>
+                    Spróbuj ponownie
+                </Button>
+            </Paper>
+        );
+    }
+
+    if (!stats) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" align="center" sx={{ py: 4 }}>
+                    Brak danych statystycznych
+                </Typography>
+            </Paper>
+        );
+    }
 
     return (
         <Stack spacing={2}>
             <Grid container spacing={2}>
-                <StatCard label="Wszystkie zgłoszenia" value={total} />
-                <StatCard label="W realizacji" value={byStatus['w realizacji'] ?? 0} />
-                <StatCard label="Zakończone" value={byStatus['zakończone'] ?? 0} />
-                <StatCard label="Odrzucone" value={byStatus['odrzucone'] ?? 0} color="error.main" />
+                <StatCard label="Wszystkie zgłoszenia" value={stats.total} />
+                <StatCard label="W realizacji" value={stats.byStatus.find(s => s.status === 'w realizacji')?.count ?? 0} />
+                <StatCard label="Zakończone" value={stats.byStatus.find(s => s.status === 'zakończone')?.count ?? 0} />
+                <StatCard label="Odrzucone" value={stats.byStatus.find(s => s.status === 'odrzucone')?.count ?? 0} color="error.main" />
             </Grid>
 
             <Paper sx={{ p: 2 }}>
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                     Podział wg statusu
                 </Typography>
-                <BarList data={byStatus} colorBy={(k) => STATUS_COLORS[k]} labelBy={(k) => STATUS_LABELS[k]} />
+                <BarList
+                    data={Object.fromEntries(stats.byStatus.map(s => [s.status, s.count]))}
+                    colorBy={(k) => STATUS_COLORS[k]}
+                    labelBy={(k) => STATUS_LABELS[k]}
+                />
             </Paper>
 
             <Paper sx={{ p: 2 }}>
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                     Podział wg kategorii
                 </Typography>
-                <BarList data={byCategory} colorBy={() => '#5B5FED'} />
+                <BarList
+                    data={Object.fromEntries(stats.byCategory.map(c => [c.category, c.count]))}
+                    colorBy={() => '#5B5FED'}
+                />
             </Paper>
         </Stack>
     );
@@ -461,16 +751,71 @@ const BarList = ({ data, colorBy, labelBy }) => {
 
 // --- Tab: Użytkownicy (WF-24) ---
 const UsersTab = () => {
-    const [users, setUsers] = useState([
-        { id: 1, email: 'jan.kowalski@example.com', createdAt: '2026-01-15', reports: 3 },
-        { id: 2, email: 'anna.nowak@example.com', createdAt: '2026-02-08', reports: 0 },
-        { id: 3, email: 'piotr.wojcik@example.com', createdAt: '2026-03-22', reports: 7 },
-    ]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const removeUser = (id) => {
-        setUsers((us) => us.filter((u) => u.id !== id));
-        toast.success('Konto użytkownika usunięte.');
+    useEffect(() => {
+        const fetchUsers = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await adminService.getUsers();
+                if (response.success) {
+                    setUsers(response.data);
+                } else {
+                    throw new Error(response.message || 'Failed to fetch users');
+                }
+            } catch (err) {
+                setError(err.message);
+                console.error('Error fetching users:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
+
+    const removeUser = async (id) => {
+        try {
+            const response = await adminService.deleteUser(id);
+            if (response.success) {
+                toast.success('Konto użytkownika usunięte.');
+                setUsers(prev => prev.filter(u => u.id !== id));
+            } else {
+                throw new Error(response.message || 'Failed to delete user');
+            }
+        } catch (err) {
+            toast.error('Nie udało się usunąć konta użytkownika.');
+            console.error('Error deleting user:', err);
+        }
     };
+
+    if (loading) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" align="center" sx={{ py: 4 }}>
+                    Ładowanie użytkowników...
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (error) {
+        return (
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" color="error.main" align="center" sx={{ py: 4 }}>
+                    {error}
+                </Typography>
+                <Button variant="outlined" onClick={() => {
+                    setError(null);
+                }}>
+                    Spróbuj ponownie
+                </Button>
+            </Paper>
+        );
+    }
 
     return (
         <Paper sx={{ p: 2 }}>
