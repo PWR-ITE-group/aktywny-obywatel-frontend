@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../config/api';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -21,34 +21,31 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (email, password) => {
-        return api.post('/api/auth/login', {
-            email: email, password: password
-        }).then((response) => {
-            console.log(response.data);
-            if (response.data.success) {
-                setUser({ email: response.data.data.email, role: response.data.data.role });
-                setToken(response.data.data.token);
-                localStorage.setItem('token', response.data.data.token);
+        try {
+            const result = await authService.login(email, password);
+            if (result.success) {
+                setUser({ email: result.data.email, role: result.data.role });
+                setToken(result.data.token);
+                localStorage.setItem('token', result.data.token);
             }
-            return response.data;
-        }).catch((error) => {
-            return { success: error.response?.data?.success || false, message: error.response?.data?.message || "Błąd serwera" };
-        });
+            return result;
+        } catch (error) {
+            console.error('Login error:', error);
+            return { success: false, message: error.message || "Błąd serwera" };
+        }
     };
 
     const register = async (email, password, phoneNumber) => {
-        return api.post("/api/auth/register", {
-            email: email, password: password, phoneNumber: phoneNumber
-        }).then((response) => {
-            console.log(response.data);
-            if (response.data.success) {
-                console.log(window.location.origin + "/weryfikacja?token=" + response.data.data.verificationToken);
+        try {
+            const result = await authService.register(email, password, phoneNumber);
+            if (result.success) {
+                console.log(window.location.origin + "/weryfikacja?token=" + result.data.verificationToken);
             }
-            return response.data;
-        }).catch((error) => {
-            console.error(error);
+            return result;
+        } catch (error) {
+            console.error('Registration error:', error);
             throw error;
-        });
+        }
     };
     const logout = () => {
         setUser(null);
