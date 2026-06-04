@@ -175,10 +175,10 @@ export const adminService = {
       return {
         success: true,
         data: [
-          { id: 1, email: 'jan.kowalski@example.com', createdAt: '2026-01-15', reports: 3, role: 'user' },
-          { id: 2, email: 'anna.nowak@example.com', createdAt: '2026-02-08', reports: 0, role: 'user' },
-          { id: 3, email: 'piotr.wojcik@example.com', createdAt: '2026-03-22', reports: 7, role: 'user' },
-          { id: 4, email: 'admin@example.com', createdAt: '2026-01-01', reports: 0, role: 'admin' }
+          { id: 1, email: 'jan.kowalski@aktywnyobywatel.pl', createdAt: '2026-01-15', reports: 3, role: 'user' },
+          { id: 2, email: 'anna.nowak@aktywnyobywatel.pl', createdAt: '2026-02-08', reports: 0, role: 'user' },
+          { id: 3, email: 'piotr.wojcik@aktywnyobywatel.pl', createdAt: '2026-03-22', reports: 7, role: 'user' },
+          { id: 4, email: 'admin@aktywnyobywatel.pl', createdAt: '2026-01-01', reports: 0, role: 'admin' }
         ].filter(user => {
           if (filters.role && user.role !== filters.role) return false;
           return true;
