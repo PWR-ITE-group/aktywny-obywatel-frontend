@@ -9,7 +9,6 @@ import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import { emailSchema, passwordSchema } from '../utils/reportSchemas';
 import toast from 'react-hot-toast';
-import { authService } from '../services/authService';
 
 // WF-07: reset hasła w dwóch krokach.
 // Ekran 1: użytkownik podaje email → wysyłamy link resetujący.
@@ -47,17 +46,13 @@ const RequestResetForm = () => {
         setError('');
         setLoading(true);
 
-        try {
-            await authService.requestPasswordReset(email);
-            // WNF-14: zawsze zwracamy sukces, niezależnie czy email jest w bazie
-            // (żeby nie ujawniać, które konta istnieją).
-        } catch (err) {
-            // Even if the backend returns an error, we still show success to avoid user enumeration.
-            console.error(err);
-        } finally {
-            setLoading(false);
-            setSent(true);
-        }
+        // TODO: authService.requestPasswordReset(email)
+        // WNF-14: zawsze zwracamy sukces, niezależnie czy email jest w bazie
+        // (żeby nie ujawniać, które konta istnieją).
+        await new Promise((r) => setTimeout(r, 600));
+
+        setLoading(false);
+        setSent(true);
     };
 
     if (sent) {
@@ -156,16 +151,12 @@ const ConfirmResetForm = ({ token, onDone }) => {
         setErrors({});
         setLoading(true);
 
-        try {
-            await authService.confirmPasswordReset(token, pwd.next);
-            toast.success('Hasło zostało zmienione. Możesz się zalogować.');
-            onDone();
-        } catch (err) {
-            toast.error('Nie udało się zmienić hasła. Spróbuj ponownie.');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+        // TODO: authService.confirmPasswordReset(token, pwd.next)
+        await new Promise((r) => setTimeout(r, 600));
+
+        setLoading(false);
+        toast.success('Hasło zostało zmienione. Możesz się zalogować.');
+        onDone();
     };
 
     return (

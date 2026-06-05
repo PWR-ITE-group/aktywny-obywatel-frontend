@@ -2,7 +2,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Box } from '@mui/material';
 import Navbar from './Navbar';
 import BottomNav from './BottomNav';
-import TranslateWidget from '../TranslateWidget';
 
 // Trasy, na których ukrywamy górny pasek (pełnoekranowa mapa itp.)
 const HIDE_NAVBAR_ROUTES = ['/mapa'];
@@ -21,7 +20,6 @@ const MainLayout = () => {
             }}
         >
             {!hideNavbar && <Navbar />}
-            <TranslateWidget />
 
             <Box
                 component="main"

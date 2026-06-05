@@ -3,7 +3,7 @@ import { Box, Stack, Typography, Chip, Grid, Divider, Alert } from '@mui/materia
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createColoredIcon } from '../../utils/leafletIcons';
-import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
+
 // Podsumowanie przed wysłaniem — użytkownik widzi wszystko co za chwilę pójdzie
 // do urzędu (zgodne z WNF-24 krok 4 = potwierdzenie).
 
@@ -40,13 +40,7 @@ const StepConfirm = ({ formData }) => {
                     {description?.trim() || <i style={{ color: '#9CA3AF' }}>— brak opisu —</i>}
                 </Typography>
             </Section>
-            {formData.priority && (
-                <Section label="Priorytet">
-                    <Alert severity="warning" icon={<PriorityHighIcon />}>
-                        Zgłoszenie pilne — poprosimy odbiorcę o pilny kontakt (śr. czas odpowiedzi ~3h).
-                    </Alert>
-                </Section>
-            )}
+
             <Section label={`Zdjęcia (${previews.length})`}>
                 {previews.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">

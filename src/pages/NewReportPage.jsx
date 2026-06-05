@@ -24,7 +24,6 @@ const INITIAL_FORM = {
     description: '',
     photos: [],
     location: null,
-    priority: false,
 };
 
 const NewReportPage = () => {
@@ -66,7 +65,6 @@ const NewReportPage = () => {
             await complaintService.create({
                 category: formData.category,
                 description: formData.description,
-                priority: formData.priority,
                 location: {
                     lat: formData.location[0],
                     lng: formData.location[1],
@@ -96,7 +94,6 @@ const NewReportPage = () => {
                     <StepDetails
                         description={formData.description}
                         photos={formData.photos}
-                        priority={formData.priority}
                         onChange={updateForm}
                     />
                 );

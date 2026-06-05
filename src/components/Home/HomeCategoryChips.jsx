@@ -7,15 +7,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 // Szybkie skróty do kategorii — jak "Śnieg i lód", "Sople na dachu" na screenie.
-
 const QUICK_CATEGORIES = [
-    /*
     { id: 'snieg',  label: 'Śnieg i lód',   icon: <AcUnitIcon fontSize="small" />,         category: 'Drogi i chodniki' },
     { id: 'sople',  label: 'Sople na dachu', icon: <HouseIcon fontSize="small" />,          category: 'Bezpieczeństwo' },
     { id: 'smieci', label: 'Śmieci',         icon: <DeleteOutlineIcon fontSize="small" />,  category: 'Odpady' },
     { id: 'oswietl', label: 'Oświetlenie',   icon: <LightbulbOutlinedIcon fontSize="small" />, category: 'Oświetlenie' },
-*/];
-
+];
 
 const HomeCategoryChips = () => {
     const navigate = useNavigate();

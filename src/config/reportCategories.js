@@ -1,25 +1,9 @@
 export const CATEGORIES = [
-    { id: 'transport',    label: 'Komunikacja miejska',   color: '#00ACC1', emoji: '🚌' },
-    { id: 'cleaning',     label: 'Sprzątanie i odpady',   color: '#8E24AA', emoji: '🗑️' },
-    { id: 'greenery',     label: 'Zieleń i parki',        color: '#43A047', emoji: '🌳' },
-    { id: 'water',        label: 'Woda i ścieki',         color: '#1E88E5', emoji: '💧' },
-    { id: 'roads',        label: 'Drogi i ulice',         color: '#E53935', emoji: '🛣️' },
-    { id: 'waste-burning',label: 'Palenie odpadów',       color: '#F4511E', emoji: '🔥' },
-    { id: 'parking',      label: 'Niepoprawne parkowanie',color: '#FB8C00', emoji: '🚗' },
-    { id: 'no-entry',     label: 'Nieprzestrzeganie zakazu wjazdu', color: '#E53935', emoji: '🚫' },
-    { id: 'illegal-dumping',label: 'Nielegalne składowanie odpadów', color: '#8E24AA', emoji: '☠️' },
-    { id: 'waterways',    label: 'Wody i rzeki',          color: '#00ACC1', emoji: '🌊' },
-    { id: 'animals',      label: 'Zwierzęta',             color: '#43A047', emoji: '🐾' },
-    { id: 'hate-speech',  label: 'Mowa nienawiści',       color: '#757575', emoji: '💬' },
-    { id: 'railway',      label: 'Problemy z przejazdami kolejowymi', color: '#FB8C00', emoji: '🚂' },
-    { id: 'power-outage', label: 'Awaria prądu',          color: '#FBC02D', emoji: '⚡' },
-    { id: 'other',        label: 'Pozostałe zgłoszenia',  color: '#9E9E9E', emoji: '📋' },
+    { id: 'drogi', label: 'Drogi i chodniki', icon: '🛣️' },
+    { id: 'oswietlenie', label: 'Oświetlenie', icon: '💡' },
+    { id: 'zielen', label: 'Zieleń miejska', icon: '🌳' },
+    { id: 'odpady', label: 'Odpady', icon: '🗑️' },
+    { id: 'wodociagi', label: 'Wodociągi i kanalizacja', icon: '💧' },
+    { id: 'bezpieczenstwo', label: 'Bezpieczeństwo', icon: '🔒' },
+    { id: 'inne', label: 'Inne', icon: '📋' },
 ];
-
-export const STATUS_CONFIG = {
-    SUBMITTED:    { label: 'Złożone',       color: 'default',  muiColor: '#757575' },
-    ACCEPTED:     { label: 'Przyjęte',      color: 'info',     muiColor: '#1E88E5' },
-    IN_PROGRESS:  { label: 'W realizacji',  color: 'warning',  muiColor: '#FB8C00' },
-    RESOLVED:     { label: 'Zakończone',    color: 'success',  muiColor: '#43A047' },
-    REJECTED:     { label: 'Odrzucone',     color: 'error',    muiColor: '#E53935' },
-};

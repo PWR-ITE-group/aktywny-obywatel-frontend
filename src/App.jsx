@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { Toaster } from 'react-hot-toast';
-import VerificationPage from './pages/VerificationPage';
+
 import theme from './theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -79,7 +79,6 @@ const App = () => {
                         <Route path="/rejestracja" element={<RegisterPage />} />
                         <Route path="/reset-hasla" element={<PasswordResetPage />} />
 
-                        <Route path="/weryfikacja" element={<VerificationPage />} />
                         {/* 404 */}
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>

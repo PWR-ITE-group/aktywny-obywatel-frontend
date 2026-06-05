@@ -1,19 +1,23 @@
 import { useRef, useState, useEffect } from 'react';
 import {
     Box, Stack, Typography, TextField, Button, IconButton, Alert,
-    LinearProgress, Grid, FormControlLabel, Checkbox,
+    LinearProgress, Grid,
 } from '@mui/material';
 import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { DESCRIPTION_MAX, PHOTO_LIMITS, validateNewPhotos, descriptionSchema } from '../../utils/reportSchemas';
 
-const StepDetails = ({ description, photos, priority, onChange }) => {
+// WF-09: max 3 zdjęcia, 10 MB, JPG/PNG/WEBP.
+// WF-10: opis do 1000 znaków.
+// WNF-25: live walidacja + komunikaty "co poprawić".
+
+const StepDetails = ({ description, photos, onChange }) => {
     const inputRef = useRef(null);
     const [uploadErrors, setUploadErrors] = useState([]);
     const [descError, setDescError] = useState(null);
     const [previews, setPreviews] = useState([]);
 
+    // Tworzymy i zwalniamy object URLs dla podglądu miniatur
     useEffect(() => {
         const urls = photos.map((p) => ({
             url: p instanceof File ? URL.createObjectURL(p) : p.url,
@@ -36,7 +40,7 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
         if (accepted.length > 0) {
             onChange({ photos: [...photos, ...accepted] });
         }
-        e.target.value = '';
+        e.target.value = ''; // reset żeby dało się ponownie dodać to samo
     };
 
     const removePhoto = (idx) => {
@@ -48,6 +52,7 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
     const onDescChange = (e) => {
         const value = e.target.value.slice(0, DESCRIPTION_MAX);
         onChange({ description: value });
+        // Walidacja na żywo, ale wyświetlamy błąd dopiero gdy coś jest wpisane
         if (value.trim().length === 0) {
             setDescError(null);
         } else {
@@ -80,6 +85,7 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
                     }
                     inputProps={{ maxLength: DESCRIPTION_MAX }}
                 />
+                {/* Wizualny licznik — zmienia kolor przy zbliżaniu się do limitu */}
                 <LinearProgress
                     variant="determinate"
                     value={(description.length / DESCRIPTION_MAX) * 100}
@@ -175,45 +181,6 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
                                 <Typography variant="body2" key={i}>{err}</Typography>
                             ))}
                         </Stack>
-                    </Alert>
-                )}
-            </Box>
-
-            {/* Priorytet */}
-            <Box
-                sx={{
-                    border: '1px solid',
-                    borderColor: priority ? 'error.main' : 'divider',
-                    borderRadius: 2,
-                    p: 2,
-                    bgcolor: priority ? 'error.50' : 'background.paper',
-                    transition: 'all 0.2s',
-                }}
-            >
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={Boolean(priority)}
-                            onChange={(e) => onChange({ priority: e.target.checked })}
-                            color="error"
-                            icon={<PriorityHighIcon sx={{ color: 'action.disabled' }} />}
-                            checkedIcon={<PriorityHighIcon sx={{ color: 'error.main' }} />}
-                        />
-                    }
-                    label={
-                        <Box>
-                            <Typography variant="body2" fontWeight={600}>
-                                Zgłoszenie pilne
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Zaznacz jeśli problem stanowi bezpośrednie zagrożenie lub wymaga natychmiastowej reakcji.
-                            </Typography>
-                        </Box>
-                    }
-                />
-                {priority && (
-                    <Alert severity="warning" icon={<PriorityHighIcon />} sx={{ mt: 1.5 }}>
-                        Poprosimy odbiorcę o pilny kontakt. Średni czas odpowiedzi w takich przypadkach wynosi około 3 godzin.
                     </Alert>
                 )}
             </Box>
