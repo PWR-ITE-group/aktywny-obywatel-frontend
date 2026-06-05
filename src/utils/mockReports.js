@@ -2,7 +2,7 @@
 export const MOCK_REPORTS = [
     {
         id: 1,
-        category: 'road',
+        category: 'roads',
         title: 'Dziura w asfalcie',
         description: 'Głęboka dziura na skrzyżowaniu ul. Świdnickiej i Piłsudskiego, stwarza zagrożenie.',
         lat: 51.1073,
@@ -13,7 +13,7 @@ export const MOCK_REPORTS = [
     },
     {
         id: 2,
-        category: 'lighting',
+        category: 'transport',
         title: 'Niesprawna latarnia',
         description: 'Latarnia nie świeci od tygodnia, ciemno wieczorami.',
         lat: 51.1132,
@@ -35,7 +35,7 @@ export const MOCK_REPORTS = [
     },
     {
         id: 4,
-        category: 'waste',
+        category: 'cleaning',
         title: 'Przepełniony kosz',
         description: 'Kosz na śmieci przy przystanku nie był opróżniany od kilku dni.',
         lat: 51.1050,
@@ -57,7 +57,7 @@ export const MOCK_REPORTS = [
     },
     {
         id: 6,
-        category: 'road',
+        category: 'roads',
         title: 'Uszkodzona barierka',
         description: 'Barierka przy moście jest wygięta i stwarza niebezpieczeństwo.',
         lat: 51.1200,

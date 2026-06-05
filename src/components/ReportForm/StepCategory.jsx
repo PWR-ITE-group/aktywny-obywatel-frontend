@@ -1,96 +1,73 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
     Box, TextField, InputAdornment, Tabs, Tab, List, ListItemButton,
-    ListItemText, IconButton, Typography, Collapse, Stack,
+    ListItemText, IconButton, Typography, Collapse, Stack, CircularProgress
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MicIcon from '@mui/icons-material/Mic';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
-// Grupowanie tematów w sekcje, jak "CZYSZCZENIE" na screenie 3.
-// Każdy item to konkretny problem, który użytkownik może zgłosić.
-const TOPIC_GROUPS = [
-    {
-        id: 'czyszczenie',
-        label: 'Czyszczenie',
-        topics: [
-            'Śnieg i lód na podwórku',
-            'Nadmierne/nierównomierne rozprowadzanie odczynników na podwórku',
-            'Zaśmiecanie terenu',
-            'Nieuprzątnięty teren podwórka',
-            'Brak koszy na śmieci w wyznaczonych miejscach na podwórku',
-            'Reklama środków odurzających',
-        ],
-    },
-    {
-        id: 'drogi',
-        label: 'Drogi i chodniki',
-        topics: [
-            'Dziura w jezdni',
-            'Uszkodzony chodnik',
-            'Brak oznakowania poziomego',
-            'Nieczytelne znaki drogowe',
-        ],
-    },
-    {
-        id: 'oswietlenie',
-        label: 'Oświetlenie',
-        topics: [
-            'Nieświecąca latarnia',
-            'Uszkodzony słup oświetleniowy',
-            'Brak oświetlenia w miejscu publicznym',
-        ],
-    },
-    {
-        id: 'zielen',
-        label: 'Zieleń miejska',
-        topics: [
-            'Połamane drzewo',
-            'Nieprzycięte drzewa lub krzewy',
-            'Zniszczony trawnik',
-        ],
-    },
-    {
-        id: 'bezpieczenstwo',
-        label: 'Bezpieczeństwo',
-        topics: [
-            'Sople na dachu',
-            'Uszkodzony właz/studzienka',
-            'Niebezpieczna konstrukcja',
-        ],
-    },
-];
+import { complaintService } from '../../services/complaintService'; // Upewnij się, że ścieżka jest poprawna
 
 const POPULAR_TOPICS = [
-    'Śnieg i lód na podwórku',
-    'Dziura w jezdni',
-    'Nieświecąca latarnia',
-    'Zaśmiecanie terenu',
-    'Sople na dachu',
+    'Dziury w drodze, jezdni lub chodniku miejskim',
+    'Zniszczone lub przepełnione kosze na śmieci',
+    'Niepoprawne parkowanie (zastawianie chodników, parkowanie przy przejściach/skrzyżowaniach)',
+    'Problem z oświetleniem ulicznym',
+    'Uszkodzona ławka na przystanku',
 ];
 
-const StepCategory = ({ value, onChange }) => {
-    const [tab, setTab] = useState(0); // 0 = Odpowiednie, 1 = Popularne
+const StepCategory = ({ value, onChange, onCategoryChange }) => {
+    const [tab, setTab] = useState(0);
     const [search, setSearch] = useState('');
-    const [openGroups, setOpenGroups] = useState({ czyszczenie: true });
+    const [topicGroups, setTopicGroups] = useState([]); // Dynamiczne grupy z bazy danych
+    const [loading, setLoading] = useState(true);
+    const [openGroups, setOpenGroups] = useState({});
+
+    // Pobieranie kategorii z "bazy danych" przy montowaniu komponentu
+    useEffect(() => {
+        let isMounted = true;
+        complaintService.getCategories()
+            .then((data) => {
+                if (isMounted) {
+                    setTopicGroups(data);
+                    // Opcjonalnie: rozwiń automatycznie pierwszą grupę z bazy
+                    if (data.length > 0) {
+                        setOpenGroups({ [data[0].id]: true });
+                    }
+                    setLoading(false);
+                }
+            })
+            .catch((err) => {
+                console.error("Błąd ładowania kategorii:", err);
+                if (isMounted) setLoading(false);
+            });
+
+        return () => { isMounted = false; };
+    }, []);
 
     const toggleGroup = (id) => {
         setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
-    // Filtrowanie po wyszukiwarce — przeszukujemy wszystkie tematy we wszystkich grupach
+    const handleTopicSelect = (topic, categoryId) => {
+        onChange(topic);
+        if (onCategoryChange) {
+            onCategoryChange(categoryId); // Przekazujemy ID kategorii wyżej do formularza
+        }
+    };
+
     const filteredGroups = useMemo(() => {
-        if (!search.trim()) return TOPIC_GROUPS;
+        if (!search.trim()) return topicGroups;
         const q = search.toLowerCase();
-        return TOPIC_GROUPS
+        return topicGroups
             .map((g) => ({
                 ...g,
                 topics: g.topics.filter((t) => t.toLowerCase().includes(q)),
             }))
             .filter((g) => g.topics.length > 0);
-    }, [search]);
+    }, [search, topicGroups]);
 
     const popular = useMemo(() => {
         if (!search.trim()) return POPULAR_TOPICS;
@@ -98,14 +75,22 @@ const StepCategory = ({ value, onChange }) => {
         return POPULAR_TOPICS.filter((t) => t.toLowerCase().includes(q));
     }, [search]);
 
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
     return (
         <Stack spacing={2}>
             <Typography variant="body2" color="text.secondary">
-                Wyszukaj lub wybierz temat
+                Wyszukaj lub wybierz temat zgłoszenia dla Wrocławia
             </Typography>
 
             <TextField
-                placeholder="Wyszukaj temat"
+                placeholder="Wyszukaj temat (np. dziura, śmieci, pies)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 fullWidth
@@ -118,14 +103,7 @@ const StepCategory = ({ value, onChange }) => {
                     ),
                     endAdornment: (
                         <InputAdornment position="end">
-                            <IconButton
-                                size="small"
-                                sx={{
-                                    bgcolor: 'primary.main',
-                                    color: 'white',
-                                    '&:hover': { bgcolor: 'primary.dark' },
-                                }}
-                            >
+                            <IconButton size="small" sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}>
                                 <MicIcon fontSize="small" />
                             </IconButton>
                         </InputAdornment>
@@ -143,15 +121,11 @@ const StepCategory = ({ value, onChange }) => {
                     bgcolor: 'background.default',
                     borderRadius: 2,
                     p: 0.5,
-                    '& .Mui-selected': {
-                        bgcolor: 'primary.main',
-                        color: 'white !important',
-                        borderRadius: 1.5,
-                    },
+                    '& .Mui-selected': { bgcolor: 'primary.main', color: 'white !important', borderRadius: 1.5 },
                 }}
             >
-                <Tab label="Odpowiednie tematy" />
-                <Tab label="Popularne tematy" />
+                <Tab label="Kategorie" />
+                <Tab label="Najczęstsze zgłoszenia" />
             </Tabs>
 
             {tab === 0 && (
@@ -172,11 +146,7 @@ const StepCategory = ({ value, onChange }) => {
                                         borderColor: 'divider',
                                     }}
                                 >
-                                    <Typography
-                                        variant="overline"
-                                        color="text.secondary"
-                                        sx={{ letterSpacing: '0.08em', fontWeight: 600 }}
-                                    >
+                                    <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.08em', fontWeight: 600 }}>
                                         {group.label.toUpperCase()}
                                     </Typography>
                                     {isOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -187,26 +157,16 @@ const StepCategory = ({ value, onChange }) => {
                                             <ListItemButton
                                                 key={topic}
                                                 selected={value === topic}
-                                                onClick={() => onChange(topic)}
+                                                onClick={() => handleTopicSelect(topic, group.id)}
                                                 sx={{
                                                     py: 1.5,
                                                     borderBottom: '1px solid',
                                                     borderColor: 'divider',
-                                                    '&.Mui-selected': {
-                                                        bgcolor: 'rgba(91,95,237,0.08)',
-                                                    },
+                                                    '&.Mui-selected': { bgcolor: 'rgba(91,95,237,0.08)' },
                                                 }}
                                             >
-                                                <ListItemText
-                                                    primary={topic}
-                                                    primaryTypographyProps={{ fontSize: '0.9375rem' }}
-                                                />
-                                                <IconButton
-                                                    size="small"
-                                                    edge="end"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    aria-label="Informacja"
-                                                >
+                                                <ListItemText primary={topic} primaryTypographyProps={{ fontSize: '0.9375rem' }} />
+                                                <IconButton size="small" edge="end" onClick={(e) => e.stopPropagation()}>
                                                     <InfoOutlinedIcon fontSize="small" color="action" />
                                                 </IconButton>
                                             </ListItemButton>
@@ -226,24 +186,28 @@ const StepCategory = ({ value, onChange }) => {
 
             {tab === 1 && (
                 <List disablePadding>
-                    {popular.map((topic) => (
-                        <ListItemButton
-                            key={topic}
-                            selected={value === topic}
-                            onClick={() => onChange(topic)}
-                            sx={{
-                                py: 1.5,
-                                borderBottom: '1px solid',
-                                borderColor: 'divider',
-                                '&.Mui-selected': { bgcolor: 'rgba(91,95,237,0.08)' },
-                            }}
-                        >
-                            <ListItemText primary={topic} />
-                            <IconButton size="small" edge="end" onClick={(e) => e.stopPropagation()}>
-                                <InfoOutlinedIcon fontSize="small" color="action" />
-                            </IconButton>
-                        </ListItemButton>
-                    ))}
+                    {popular.map((topic) => {
+                        // Szukamy id kategorii dla popularnego tematu, aby poprawnie przekazać go do formularza
+                        const parentGroup = topicGroups.find(g => g.topics.includes(topic));
+                        return (
+                            <ListItemButton
+                                key={topic}
+                                selected={value === topic}
+                                onClick={() => handleTopicSelect(topic, parentGroup?.id || 'other')}
+                                sx={{
+                                    py: 1.5,
+                                    borderBottom: '1px solid',
+                                    borderColor: 'divider',
+                                    '&.Mui-selected': { bgcolor: 'rgba(91,95,237,0.08)' },
+                                }}
+                            >
+                                <ListItemText primary={topic} />
+                                <IconButton size="small" edge="end" onClick={(e) => e.stopPropagation()}>
+                                    <InfoOutlinedIcon fontSize="small" color="action" />
+                                </IconButton>
+                            </ListItemButton>
+                        );
+                    })}
                 </List>
             )}
         </Stack>

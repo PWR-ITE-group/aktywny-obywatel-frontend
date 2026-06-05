@@ -23,7 +23,8 @@ const RegisterPage = () => {
         if (!form.email) e.email = 'Email jest wymagany.';
         else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Nieprawidłowy format emaila.';
         if (!form.phone) e.phone = 'Numer telefonu jest wymagany.';
-        else if (!/^\+?[1-9]\d{1,14}$/.test(form.phone.replace(/\s/g, ''))) e.phone = 'Nieprawidłowy format numeru telefonu.';
+        else if (!/^\+[1-9]\d{6,14}$/.test(form.phone.replace(/[\s\-().]/g, '')))
+            e.phone = 'Podaj numer z kodem kierunkowym, np. +48123456789.';
         if (!form.password) e.password = 'Hasło jest wymagane.';
         else if (form.password.length < 8) e.password = 'Hasło musi mieć co najmniej 8 znaków.';
         else if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(form.password))
@@ -108,7 +109,7 @@ const RegisterPage = () => {
                         autoComplete="tel"
                         required
                         error={Boolean(errors.phone)}
-                        helperText={errors.phone || 'np. +48123456789'}
+                        helperText={errors.phone || 'Wymagany kod kierunkowy, np. +48 123 456 789'}
                     />
                     <TextField
                         fullWidth
