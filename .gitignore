@@ -1,4 +1,14 @@
-# Logs
+# Odwiedź https://www.toptal.com/developers/gitignore jeśli chcesz wygenerować wersję dla innych technologii
+
+# Produkcja / Build
+dist
+dist-ssr
+/docs             # Ignoruje folder docs w katalogu głównym
+docs
+# Zależności (pakiety)
+node_modules/
+
+# Logi i błędy
 logs
 *.log
 npm-debug.log*
@@ -6,20 +16,25 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-.env
-.env.example
-node_modules
-dist
-dist-ssr
-*.local
 
-# Editor directories and files
+# Pliki ze zmiennymi środowiskowymi (TAJNE - nigdy nie pushuj!)
+.env
+*.local
+!.env.example     # .env.example POWINIEN być na gicie jako wzór struktury
+
+# IDE / Edytory (JetBrains, VS Code)
+.idea/
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Systemowe śmieci
+.DS_Store
+Thumbs.db
+
+# AI / Narzędzia pomocnicze
+.claude
