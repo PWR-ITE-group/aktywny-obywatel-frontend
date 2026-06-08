@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
-    const [form, setForm] = useState({ email: '', phone: '', password: '', confirmPassword: '' });
+    const [form, setForm] = useState({ email: '', phone: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -25,6 +25,10 @@ const RegisterPage = () => {
         if (!form.phone) e.phone = 'Numer telefonu jest wymagany.';
         else if (!/^\+[1-9]\d{6,14}$/.test(form.phone.replace(/[\s\-().]/g, '')))
             e.phone = 'Podaj numer z kodem kierunkowym, np. +48123456789.';
+        if (!form.firstName) e.firstName = 'Imię jest wymagane.';
+        else if (form.firstName.length < 2) e.firstName = 'Imię musi mieć co najmniej 2 znaki.';
+        if (!form.lastName) e.lastName = 'Nazwisko jest wymagane.';
+        else if (form.lastName.length < 2) e.lastName = 'Nazwisko musi mieć co najmniej 2 znaki.';
         if (!form.password) e.password = 'Hasło jest wymagane.';
         else if (form.password.length < 8) e.password = 'Hasło musi mieć co najmniej 8 znaków.';
         else if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(form.password))
@@ -48,7 +52,7 @@ const RegisterPage = () => {
         }
         setLoading(true);
         try {
-            await register(form.email, form.password, form.phone);
+            await register(form.email, form.password, form.phone, form.firstName, form.lastName);
             toast.success('Konto zostało utworzone! Sprawdź email w celu weryfikacji.');
             navigate('/dashboard');
         } catch {
@@ -110,6 +114,26 @@ const RegisterPage = () => {
                         required
                         error={Boolean(errors.phone)}
                         helperText={errors.phone || 'Wymagany kod kierunkowy, np. +48 123 456 789'}
+                    />
+                    <TextField
+                        fullWidth
+                        label="Imię"
+                        value={form.firstName}
+                        onChange={handleChange('firstName')}
+                        margin="normal"
+                        required
+                        error={Boolean(errors.firstName)}
+                        helperText={errors.firstName}
+                    />
+                    <TextField
+                        fullWidth
+                        label="Nazwisko"
+                        value={form.lastName}
+                        onChange={handleChange('lastName')}
+                        margin="normal"
+                        required
+                        error={Boolean(errors.lastName)}
+                        helperText={errors.lastName}
                     />
                     <TextField
                         fullWidth

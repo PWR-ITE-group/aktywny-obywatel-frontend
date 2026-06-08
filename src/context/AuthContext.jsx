@@ -35,9 +35,9 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (email, password, phoneNumber) => {
+    const register = async (email, password, phoneNumber, firstName, lastName) => {
         try {
-            const result = await authService.register(email, password, phoneNumber);
+            const result = await authService.register(email, password, phoneNumber, firstName, lastName);
             if (result.success) {
                 console.log(window.location.origin + "/weryfikacja?token=" + result.data.verificationToken);
             }
