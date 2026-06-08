@@ -20,7 +20,7 @@ export const authService = {
     return data;
   },
 
-  async register(email, password, phoneNumber) {
+  async register(email, password, phoneNumber, firstName, lastName) {
     if (USE_MOCK) {
       await delay(500);
       return {
@@ -31,7 +31,7 @@ export const authService = {
       };
     }
     const { data } = await api.post("/api/auth/register", {
-      email: email, password: password, phoneNumber: phoneNumber
+      email: email, password: password, phoneNumber: phoneNumber, firstName: firstName, lastName: lastName
     });
     return data;
   },
