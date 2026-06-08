@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Container, Paper, Box, Typography, CircularProgress, Button, Alert } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -12,6 +12,7 @@ const VerificationPage = () => {
 
     const [status, setStatus] = useState('loading'); // loading | success | error
     const [message, setMessage] = useState('');
+    const lastAttemptedTokenRef = useRef(null);
 
     useEffect(() => {
         if (!token) {
@@ -19,6 +20,13 @@ const VerificationPage = () => {
             setMessage('Brak tokenu weryfikacyjnego w adresie URL.');
             return;
         }
+
+        // Prevent multiple verification attempts with the same token
+        if (lastAttemptedTokenRef.current === token) {
+            return;
+        }
+
+        lastAttemptedTokenRef.current = token;
 
         api.post(`/api/auth/verify?token=${token}`)
             .then((response) => {

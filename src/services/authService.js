@@ -1,6 +1,6 @@
 import api from '../config/api';
-import { USE_MOCK } from '../config/mock';
-
+//import { USE_MOCK } from '../config/mock';
+const USE_MOCK = false;
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 export const authService = {
