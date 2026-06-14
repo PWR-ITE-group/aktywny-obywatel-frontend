@@ -82,22 +82,20 @@ const NewReportPage = () => {
 
             // 3. Budujemy payload kropka w kropkę pod ComplaintRequestDto oraz AddressDto
             const complaintData = {
-                title: formData.title || "Huge Pothole on Main St",
-                category: "road",
-                description: formData.description?.trim() || "A very dangerous pothole that needs immediate attention.",
-                // KROK KEY: Michał w przykładzie używa zmiennej dynamicznej {{user_id}}.
-                // Pobierzmy ID bezpośrednio z zalogowanego użytkownika (z tokenu/stanu)
-                    userId: user?.id ? Number(user.id) : (localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : 1),
+                title: formData.title || "Nowe zgłoszenie",
+                category: backendCategory,
+                description: formData.description?.trim() || "Brak opisu",
+                userId: user?.id ? Number(user.id) : (localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : 1),
                 address: {
-                    displayName: "Main St 123, Wrocław, Poland",
-                    latitude: 51.107883,
-                    longitude: 17.038538,
-                    osmPlaceId: 123456789,
-                    street: "Main St",
-                    houseNumber: "123",
-                    city: "Wrocław",
-                    postalCode: "50-001",
-                    country: "Poland"
+                    displayName: osm?.display_name || "Nieznany adres",
+                    latitude: formData.location ? formData.location[0] : 51.107883,
+                    longitude: formData.location ? formData.location[1] : 17.038538,
+                    osmPlaceId: osm?.place_id ? Number(osm.place_id) : 0,
+                    street: osm?.address?.road || "Nieznana ulica",
+                    houseNumber: osm?.address?.house_number || "",
+                    city: osm?.address?.city || osm?.address?.town || osm?.address?.village || "Wrocław",
+                    postalCode: osm?.address?.postcode || "00-000",
+                    country: osm?.address?.country || "Polska"
                 }
             };
 
@@ -124,14 +122,13 @@ const NewReportPage = () => {
         } catch (error) {
             console.error('Błąd podczas składania zgłoszenia:', error);
 
-            // TA LINIJKA WYŚWIETLI DOKŁADNY BŁĄD SERWERA W OKIENKU NA EKRANIE:
-            if (error.response && error.response.data) {
-                alert("BŁĄD Z BACKENDU MICHAŁA:\n" + JSON.stringify(error.response.data, null, 2));
+            if (error.response && error.response.status === 400) {
+                toast.error('Uzupełnij brakujące dane (np. dokładny adres).');
             } else {
-                alert("Błąd sieci lub backend nie odpowiedział niczym.");
+                toast.error('Nie udało się złożyć zgłoszenia. Spróbuj ponownie.');
             }
-
-            toast.error('Nie udało się złożyć zgłoszenia. Spróbuj ponownie.');
+        } finally {
+            setSubmitting(false);
         }
     };
     const renderStep = () => {
