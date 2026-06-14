@@ -8,7 +8,8 @@ import MicIcon from '@mui/icons-material/Mic';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { complaintService } from '../../services/complaintService'; // Upewnij się, że ścieżka jest poprawna
+import { complaintService } from '../../services/complaintService';
+import { CATEGORIES } from '../../config/reportCategories'; // Upewnij się, że ścieżka do pliku jest poprawna/ Upewnij się, że ścieżka jest poprawna
 
 const POPULAR_TOPICS = [
     'Dziury w drodze, jezdni lub chodniku miejskim',
@@ -28,24 +29,71 @@ const StepCategory = ({ value, onChange, onCategoryChange }) => {
     // Pobieranie kategorii z "bazy danych" przy montowaniu komponentu
     useEffect(() => {
         let isMounted = true;
+
         complaintService.getCategories()
             .then((data) => {
-                if (isMounted) {
+                if (!isMounted) return;
+
+                // JEŚLI BACKEND ZWRÓCIŁ DANE: Używamy danych z bazy
+                if (data && data.length > 0) {
+                    console.log("Dane pobrane pomyślnie z backendu.");
                     setTopicGroups(data);
-                    // Opcjonalnie: rozwiń automatycznie pierwszą grupę z bazy
-                    if (data.length > 0) {
-                        setOpenGroups({ [data[0].id]: true });
-                    }
+                    setOpenGroups({ [data[0].id]: true });
+                    setLoading(false);
+                } else {
+                    // JEŚLI BACKEND JEST PUSTY: Odpalamy backup z pliku reportCategories.jsx
+                    console.warn("Backend zwrócił pustą listę kategorii. Uruchamiam lokalny backup.");
+                    const backupData = fallbackToLocalCategories();
+                    setTopicGroups(backupData);
+                    setOpenGroups({ [backupData[0].id]: true });
                     setLoading(false);
                 }
             })
             .catch((err) => {
-                console.error("Błąd ładowania kategorii:", err);
-                if (isMounted) setLoading(false);
+                console.error("Błąd sieci backendu. Uruchamiam lokalny backup awaryjny.", err);
+                if (isMounted) {
+                    const backupData = fallbackToLocalCategories();
+                    setTopicGroups(backupData);
+                    setOpenGroups({ [backupData[0].id]: true });
+                    setLoading(false);
+                }
             });
 
         return () => { isMounted = false; };
     }, []);
+
+// Funkcja pomocnicza, która przerabia Twoje płaskie CATEGORIES na grupy z tematami
+    const fallbackToLocalCategories = () => {
+        return CATEGORIES.map(cat => {
+            // Generujemy przykładowe tematy na podstawie ID, żeby użytkownik miał w co kliknąć
+            let topics = [`Inne zgłoszenie w kategorii: ${cat.label}`];
+
+            if (cat.id === 'roads') {
+                topics = [
+                    'Dziury w drodze, jezdni lub chodniku miejskim',
+                    'Uszkodzona ławka na przystanku',
+                    'Niedziałająca sygnalizacja świetlna'
+                ];
+            } else if (cat.id === 'cleaning') {
+                topics = [
+                    'Zniszczone lub przepełnione kosze na śmieci',
+                    'Dzikie wysypisko odpadów'
+                ];
+            } else if (cat.id === 'parking') {
+                topics = [
+                    'Niepoprawne parkowanie (zastawianie chodników, parkowanie przy przejściach/skrzyżowaniach)',
+                    'Parkowanie na zieleni miejskiej'
+                ];
+            }
+
+            return {
+                id: cat.id,
+                label: cat.label,
+                color: cat.color,
+                topics: topics
+            };
+        });
+    };
 
     const toggleGroup = (id) => {
         setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -54,7 +102,11 @@ const StepCategory = ({ value, onChange, onCategoryChange }) => {
     const handleTopicSelect = (topic, categoryId) => {
         onChange(topic);
         if (onCategoryChange) {
-            onCategoryChange(categoryId); // Przekazujemy ID kategorii wyżej do formularza
+            // Szukamy etykiety w naszym pliku reportCategories
+            const localCat = CATEGORIES.find(c => c.id === categoryId);
+            const categoryLabel = localCat ? localCat.label : 'Pozostałe zgłoszenia';
+
+            onCategoryChange(categoryId, categoryLabel); // Przekazujemy ID i Label wyżej!
         }
     };
 
@@ -90,7 +142,7 @@ const StepCategory = ({ value, onChange, onCategoryChange }) => {
             </Typography>
 
             <TextField
-                placeholder="Wyszukaj temat (np. dziura, śmieci, pies)"
+                placeholder="Wyszukaj temat zgłoszenia"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 fullWidth
@@ -187,13 +239,18 @@ const StepCategory = ({ value, onChange, onCategoryChange }) => {
             {tab === 1 && (
                 <List disablePadding>
                     {popular.map((topic) => {
-                        // Szukamy id kategorii dla popularnego tematu, aby poprawnie przekazać go do formularza
-                        const parentGroup = topicGroups.find(g => g.topics.includes(topic));
+                        // Szukamy powiązania tematu z ID kategorii
+                        let detectedId = 'other';
+                        if (topic.includes('drogi') || topic.includes('chodniku') || topic.includes('przystanku')) detectedId = 'roads';
+                        if (topic.includes('kosze') || topic.includes('śmieci')) detectedId = 'cleaning';
+                        if (topic.includes('parkowanie')) detectedId = 'parking';
+                        if (topic.includes('oświetleniem')) detectedId = 'power-outage'; // pasuje do awarii prądu / oświetlenia
+
                         return (
                             <ListItemButton
                                 key={topic}
                                 selected={value === topic}
-                                onClick={() => handleTopicSelect(topic, parentGroup?.id || 'other')}
+                                onClick={() => handleTopicSelect(topic, detectedId)} // <--- Bezpieczne wywołanie
                                 sx={{
                                     py: 1.5,
                                     borderBottom: '1px solid',

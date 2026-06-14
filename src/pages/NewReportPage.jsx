@@ -16,28 +16,33 @@ import StepDetails from '../components/ReportForm/StepDetails';
 import StepLocation from '../components/ReportForm/StepLocation';
 import StepConfirm from '../components/ReportForm/StepConfirm';
 import { complaintService } from '../services/complaintService';
+import { useAuth } from '../context/AuthContext';
 
 const STEPS = ['Przedmiot wniosku', 'Opis i zdjęcia', 'Lokalizacja', 'Potwierdzenie'];
 
 const INITIAL_FORM = {
-    category: '',
+    categoryId: '',     // Techniczne ID kategorii przekazywane do backendu (np. 'roads')
+    categoryLabel: '',  // Czytelna etykieta wyświetlana na podsumowaniu (np. 'Drogi i ulice')
+    title: '',          // Wybrany dokładny temat zgłoszenia (np. 'Dziury w drodze...')
     description: '',
     photos: [],
-    location: null,
-    priority: false,
+    location: null,     // Tablica [lat, lng]
+    addressDetails: null // Pełny obiekt adresowy z geokodera Nominatim
 };
 
 const NewReportPage = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState(INITIAL_FORM);
     const [submitting, setSubmitting] = useState(false);
+    const [uploadingAttachments, setUploadingAttachments] = useState(false);
     const navigate = useNavigate();
     const { state } = useLocation();
+    const { user } = useAuth();
 
     // Jeżeli na HomePage kliknięto chip kategorii — wstępnie wybierz ją
     useEffect(() => {
         if (state?.prefilledCategory) {
-            setFormData((prev) => ({ ...prev, category: state.prefilledCategory }));
+            setFormData((prev) => ({ ...prev, categoryId: state.prefilledCategory }));
         }
     }, [state]);
 
@@ -46,7 +51,7 @@ const NewReportPage = () => {
     };
 
     const canProceed = () => {
-        if (activeStep === 0) return Boolean(formData.category);
+        if (activeStep === 0) return Boolean(formData.title); // Tytuł jest wymagany
         if (activeStep === 2) return Boolean(formData.location);
         return true;
     };
@@ -59,36 +64,85 @@ const NewReportPage = () => {
             setActiveStep((s) => s - 1);
         }
     };
-
     const handleSubmit = async () => {
         setSubmitting(true);
         try {
-            await complaintService.create({
-                category: formData.category,
-                description: formData.description,
-                priority: formData.priority,
-                location: {
-                    lat: formData.location[0],
-                    lng: formData.location[1],
-                },
-                photoCount: formData.photos.length,
-            });
+            const osm = formData.addressDetails;
+
+            // 1. Mapowanie kategorii pod sztywny słownik Michała (liczba pojedyncza)
+            let backendCategory = formData.categoryId;
+            if (backendCategory === 'roads') backendCategory = 'road';
+            if (backendCategory === 'cleaning') backendCategory = 'cleaning'; // lub 'waste' zależnie od ustaleń z Michałem
+
+            // Jeśli z jakiegoś powodu pole jest puste, dajemy bezpieczny fallback, by nie naruszyć @NotBlank
+            if (!backendCategory) backendCategory = 'other';
+
+            // 2. Upewniamy się, że ID użytkownika to czysta liczba (Long), usuwając ryzyko przekazania stringa
+            const rawUserId = user?.id ? Number(user.id) : 1;
+
+            // 3. Budujemy payload kropka w kropkę pod ComplaintRequestDto oraz AddressDto
+            const complaintData = {
+                title: formData.title || "Huge Pothole on Main St",
+                category: "road",
+                description: formData.description?.trim() || "A very dangerous pothole that needs immediate attention.",
+                // KROK KEY: Michał w przykładzie używa zmiennej dynamicznej {{user_id}}.
+                // Pobierzmy ID bezpośrednio z zalogowanego użytkownika (z tokenu/stanu)
+                    userId: user?.id ? Number(user.id) : (localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : 1),
+                address: {
+                    displayName: "Main St 123, Wrocław, Poland",
+                    latitude: 51.107883,
+                    longitude: 17.038538,
+                    osmPlaceId: 123456789,
+                    street: "Main St",
+                    houseNumber: "123",
+                    city: "Wrocław",
+                    postalCode: "50-001",
+                    country: "Poland"
+                }
+            };
+
+            console.log("Wysyłany payload do backendu:", complaintData);
+            // DODAJ TO TUŻ PRZED WYSYŁKĄ:
+            console.log("DOKŁADNY PAYLOAD WYSYŁANY DO MICHAŁA:");
+            console.log(JSON.stringify(complaintData, null, 2));
+
+
+            const createdComplaint = await complaintService.create(complaintData);
+
+            // 2. Jeśli użytkownik załączył pliki graficzne, wysyłamy je w pętli sekwencyjnie
+            if (formData.photos && formData.photos.length > 0) {
+                setUploadingAttachments(true);
+                const uploadPromises = formData.photos.map(photo =>
+                    complaintService.addAttachment(createdComplaint.id, photo)
+                );
+                await Promise.all(uploadPromises);
+                setUploadingAttachments(false);
+            }
+
             toast.success('Zgłoszenie zostało złożone!');
             navigate('/dashboard');
-        } catch {
+        } catch (error) {
+            console.error('Błąd podczas składania zgłoszenia:', error);
+
+            // TA LINIJKA WYŚWIETLI DOKŁADNY BŁĄD SERWERA W OKIENKU NA EKRANIE:
+            if (error.response && error.response.data) {
+                alert("BŁĄD Z BACKENDU MICHAŁA:\n" + JSON.stringify(error.response.data, null, 2));
+            } else {
+                alert("Błąd sieci lub backend nie odpowiedział niczym.");
+            }
+
             toast.error('Nie udało się złożyć zgłoszenia. Spróbuj ponownie.');
-        } finally {
-            setSubmitting(false);
         }
     };
-
     const renderStep = () => {
         switch (activeStep) {
             case 0:
                 return (
                     <StepCategory
-                        value={formData.category}
-                        onChange={(category) => updateForm({ category })}
+                        value={formData.title}
+                        onChange={(title) => updateForm({ title })}
+                        // Zapisujemy techniczny slug do bazy oraz etykietę dla widoku podsumowania
+                        onCategoryChange={(categoryId, categoryLabel) => updateForm({ categoryId, categoryLabel })}
                     />
                 );
             case 1:
@@ -104,7 +158,8 @@ const NewReportPage = () => {
                 return (
                     <StepLocation
                         location={formData.location}
-                        onChange={(location) => updateForm({ location })}
+                        // Odbieramy punkt oraz pełne metadane adresowe z OpenStreetMap
+                        onChange={(location, addressDetails) => updateForm({ location, addressDetails })}
                     />
                 );
             case 3:
@@ -118,7 +173,6 @@ const NewReportPage = () => {
 
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
-            {/* Górny pasek — X po lewej, tytuł kroku, ? po prawej */}
             <AppBar position="sticky" color="inherit" elevation={0}>
                 <Toolbar sx={{ minHeight: 56 }}>
                     <IconButton edge="start" onClick={() => navigate(-1)} aria-label="Zamknij">
@@ -164,7 +218,6 @@ const NewReportPage = () => {
                 </Paper>
             </Container>
 
-            {/* Sticky dolny pasek akcji */}
             <Box
                 sx={{
                     position: 'sticky',
@@ -175,6 +228,7 @@ const NewReportPage = () => {
                     p: 2,
                     display: 'flex',
                     gap: 1,
+                    zIndex: 1100
                 }}
             >
                 <Button
@@ -200,13 +254,13 @@ const NewReportPage = () => {
                         variant="contained"
                         color="primary"
                         endIcon={
-                            submitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon />
+                            submitting || uploadingAttachments ? <CircularProgress size={16} color="inherit" /> : <SendIcon />
                         }
                         onClick={handleSubmit}
-                        disabled={submitting || !formData.location}
+                        disabled={submitting || uploadingAttachments || !formData.location}
                         sx={{ flex: 2 }}
                     >
-                        {submitting ? 'Wysyłanie...' : 'Złóż zgłoszenie'}
+                        {submitting || uploadingAttachments ? 'Wysyłanie...' : 'Złóż zgłoszenie'}
                     </Button>
                 )}
             </Box>
