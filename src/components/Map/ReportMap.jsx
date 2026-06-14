@@ -31,7 +31,7 @@ const ReportMap = ({ reports = [], height = '100%', onMarkerClick }) => {
             {reports.map((report) => (
                 <Marker
                     key={report.id}
-                    position={[report.lat, report.lng]}
+                    position={[report.address?.latitude ?? report.lat, report.address?.longitude ?? report.lng]}
                     icon={createColoredIcon(STATUS_COLORS[report.status] ?? '#757575')}
                     eventHandlers={{
                         click: () => onMarkerClick?.(report),

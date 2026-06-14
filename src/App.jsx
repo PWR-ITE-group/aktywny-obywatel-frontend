@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import { Toaster } from 'react-hot-toast';
 import VerificationPage from './pages/VerificationPage';
 import theme from './theme';
@@ -34,7 +34,16 @@ import AdminPage from './pages/AdminPage';
 
 // Strażnik tras wymagających zalogowania (opcjonalnie z rolą)
 const ProtectedRoute = ({ role }) => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
+    
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+    
     if (!user) return <Navigate to="/logowanie" replace />;
     if (role && user.role !== role) return <Navigate to="/" replace />;
     return <Outlet />;

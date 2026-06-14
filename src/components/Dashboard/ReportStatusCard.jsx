@@ -1,15 +1,20 @@
-import { Card, CardContent, Box, Typography, Chip, Stack, Grid } from '@mui/material';
+import { Card, CardContent, Box, Typography, Chip, Stack, Grid, CardActionArea } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { STATUS_COLORS, STATUS_LABELS } from '../../config/mapConfig';
+import { useNavigate } from 'react-router-dom';
 
 // Ikona + kolor wiodący dla statusu (jak zielony check "Problem naprawiony" na screenie 5).
 const statusMeta = (status) => {
     switch (status) {
+        case 'RESOLVED':
         case 'zakończone':   return { icon: <CheckCircleIcon fontSize="small" />, label: 'Problem naprawiony', color: 'success.main' };
+        case 'ROUTED':
+        case 'NOTIFIED':
         case 'w realizacji': return { icon: <HourglassEmptyIcon fontSize="small" />, label: 'W realizacji',     color: 'info.main' };
+        case 'NEW':
         case 'przyjęte':     return { icon: <AccessTimeIcon fontSize="small" />,    label: 'Przyjęte',          color: 'warning.main' };
         case 'odrzucone':    return { icon: <CancelIcon fontSize="small" />,        label: 'Odrzucone',         color: 'error.main' };
         default:             return { icon: <AccessTimeIcon fontSize="small" />,    label: STATUS_LABELS[status] ?? status, color: 'text.secondary' };
@@ -19,11 +24,13 @@ const statusMeta = (status) => {
 // Karta zgłoszenia z widokiem odpowiedzi urzędu, zdjęciami i datą.
 const ReportStatusCard = ({ report }) => {
     const meta = statusMeta(report.status);
+    const navigate = useNavigate();
 
     return (
         <Card sx={{ mb: 2 }}>
-            <CardContent sx={{ p: 2 }}>
-                {/* Nagłówek autora odpowiedzi */}
+            <CardActionArea onClick={() => navigate(`/zgloszenie/${report.id}`)}>
+                <CardContent sx={{ p: 2 }}>
+                    {/* Nagłówek autora odpowiedzi */}
                 <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ mb: 1 }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="subtitle2" fontWeight={700}>
@@ -63,9 +70,9 @@ const ReportStatusCard = ({ report }) => {
                 {/* Kategoria + lokalizacja */}
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
                     <Chip label={report.category} size="small" variant="outlined" />
-                    {report.location && (
+                    {(report.address?.displayName || report.location) && (
                         <Chip
-                            label={report.location}
+                            label={report.address?.displayName || report.location}
                             size="small"
                             variant="outlined"
                             sx={{ maxWidth: 240 }}
@@ -123,7 +130,8 @@ const ReportStatusCard = ({ report }) => {
                         Odpowiedź została udzielona w wyznaczonym czasie.
                     </Typography>
                 )}
-            </CardContent>
+                </CardContent>
+            </CardActionArea>
         </Card>
     );
 };

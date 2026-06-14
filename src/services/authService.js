@@ -8,26 +8,20 @@ export const authService = {
     if (USE_MOCK) {
       await delay(500);
       return {
-        success: true,
-        data: {
-          email: email,
-          role: email === 'admin@aktywnyobywatel.pl' ? 'admin' : 'user',
-          token: 'mock-jwt-token-for-testing'
-        }
+        email: email,
+        role: email === 'admin@aktywnyobywatel.pl' ? 'admin' : 'user',
+        token: 'mock-jwt-token-for-testing'
       };
     }
     const { data } = await api.post('/api/auth/login', { email, password });
-    return data;
+    return typeof data === 'string' ? { token: data } : data;
   },
 
   async register(email, password, phoneNumber, firstName, lastName) {
     if (USE_MOCK) {
       await delay(500);
       return {
-        success: true,
-        data: {
-          verificationToken: 'mock-verification-token'
-        }
+        verificationToken: 'mock-verification-token'
       };
     }
     const { data } = await api.post("/api/auth/register", {
@@ -40,7 +34,7 @@ export const authService = {
     if (USE_MOCK) {
       await delay(600);
       // Always return success to avoid user enumeration
-      return { success: true };
+      return {};
     }
     const { data } = await api.post('/api/auth/request-password-reset', { email });
     return data;
@@ -49,7 +43,7 @@ export const authService = {
   async confirmPasswordReset(token, newPassword) {
     if (USE_MOCK) {
       await delay(600);
-      return { success: true };
+      return {};
     }
     const { data } = await api.post(`/api/auth/confirm-password-reset?token=${token}`, { newPassword });
     return data;

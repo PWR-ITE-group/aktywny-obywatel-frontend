@@ -9,6 +9,10 @@ export const STATUS_COLORS = {
     'w realizacji': '#00897B',
     zakończone: '#2E7D32',
     odrzucone: '#C62828',
+    NEW: '#F57F17',
+    ROUTED: '#00897B',
+    NOTIFIED: '#00897B',
+    RESOLVED: '#2E7D32',
 };
 
 export const STATUS_LABELS = {
@@ -17,6 +21,10 @@ export const STATUS_LABELS = {
     'w realizacji': 'W realizacji',
     zakończone: 'Zakończone',
     odrzucone: 'Odrzucone',
+    NEW: 'Przyjęte',
+    ROUTED: 'W realizacji',
+    NOTIFIED: 'W realizacji',
+    RESOLVED: 'Zakończone',
 };
 
 export const CATEGORIES = [

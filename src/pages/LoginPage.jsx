@@ -33,25 +33,21 @@ const LoginPage = () => {
         setError('');
         setLoading(true);
         try {
-            const result = await login(email, password);
-            if (result.success) {
-                toast.success('Zalogowano pomyślnie!');
-                // Jeśli istnieje prefilledCategory z logowania przez chip, przekaż ją do formularza zgłoszenia
-                if (prefilledCategory) {
-                    navigate('/nowe-zgloszenie', {
-                        state: { prefilledCategory },
-                        replace: true
-                    });
-                } else {
-                    navigate(from, { replace: true });
-                }
-            }
-            else {
-                setError(result.message);
+            await login(email, password);
+            toast.success('Zalogowano pomyślnie!');
+            // Jeśli istnieje prefilledCategory z logowania przez chip, przekaż ją do formularza zgłoszenia
+            if (prefilledCategory) {
+                navigate('/nowe-zgloszenie', {
+                    state: { prefilledCategory },
+                    replace: true
+                });
+            } else {
+                navigate(from, { replace: true });
             }
         } catch (err) {
             console.log(err);
-            setError('Błąd logowania');
+            const msg = err.response?.data?.message || err.message || 'Błąd logowania';
+            setError(msg);
         } finally {
             setLoading(false);
         }

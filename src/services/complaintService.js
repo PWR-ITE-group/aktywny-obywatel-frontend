@@ -180,7 +180,25 @@ export const complaintService = {
             return MOCK_CATEGORIES_FROM_DB;
         }
         const { data } = await api.get('/api/complaints/categories');
-        return data.data;
+        return data;
+    },
+
+    async getAll() {
+        if (USE_MOCK) {
+            await delay(300);
+            return [];
+        }
+        const { data } = await api.get('/api/complaints');
+        return data;
+    },
+
+    async getById(id) {
+        if (USE_MOCK) {
+            await delay(300);
+            return null;
+        }
+        const { data } = await api.get(`/api/complaints/${id}`);
+        return data;
     },
 
     async create(complaintData) {
@@ -206,7 +224,7 @@ export const complaintService = {
             };
         }
         const { data } = await api.post('/api/complaints', complaintData);
-        return data.data;
+        return data;
     },
 
     // METODA DO DODAWANIA ZAŁĄCZNIKÓW
@@ -230,7 +248,7 @@ export const complaintService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        return data.data;
+        return data;
     },
 
     // METODA DO POBIERANIA ZAŁĄCZNIKÓW
@@ -241,6 +259,14 @@ export const complaintService = {
             return [];
         }
         const { data } = await api.get(`/api/complaints/${complaintId}/attachments`);
-        return data.data;
+        return data;
+    },
+
+    async incrementView(id) {
+        if (USE_MOCK) {
+            await delay(100);
+            return;
+        }
+        await api.post(`/api/complaints/${id}/views`);
     },
 };

@@ -41,7 +41,7 @@ const WiecejPage = () => {
         </ListItem>
         <ListItem button onClick={() => navigate('/dashboard')}>
           <ListItemIcon><PersonIcon /></ListItemIcon>
-          <ListItemText primary="Mój panel" />
+          <ListItemText primary="Moje zgłoszenia" />
         </ListItem>
         <ListItem button onClick={() => navigate('/mapa')}>
           <ListItemIcon><InfoIcon /></ListItemIcon>

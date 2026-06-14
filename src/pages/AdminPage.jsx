@@ -64,11 +64,7 @@ const ReportsTab = () => {
                 if (statusFilter) filters.status = statusFilter;
                 if (query) filters.search = query;
                 const response = await adminService.getAllReports(filters);
-                if (response.success) {
-                    setReports(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch reports');
-                }
+                setReports(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching reports:', err);
@@ -94,18 +90,14 @@ const ReportsTab = () => {
             if (statusFilter) filters.status = statusFilter;
             if (query) filters.search = query;
             const response = await adminService.exportReportsCSV(filters);
-            if (response.success && response.data) {
-                const blob = new Blob([response.data.csvContent], { type: 'text/csv;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
-            } else {
-                throw new Error(response.message || 'Failed to export CSV');
-            }
+            const blob = new Blob([response.csvContent], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
         } catch (err) {
             toast.error('Nie udało się wyeksportować zgłoszeń.');
             console.error('Error exporting CSV:', err);
@@ -114,16 +106,10 @@ const ReportsTab = () => {
 
     const updateStatus = async (id, newStatus) => {
         try {
-            const response = await adminService.updateReportStatus(id, newStatus);
-            if (response.success) {
-                toast.success('Zmieniono status zgłoszenia.');
-                // Optionally, refetch the reports to ensure we have the latest data
-                // But for simplicity, we'll update optimistically
-                setReports(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
-                setEditDialog(null);
-            } else {
-                throw new Error(response.message || 'Failed to update status');
-            }
+            await adminService.updateReportStatus(id, newStatus);
+            toast.success('Zmieniono status zgłoszenia.');
+            setReports(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+            setEditDialog(null);
         } catch (err) {
             toast.error('Nie udało się zmienić statusu zgłoszenia.');
             console.error('Error updating report status:', err);
@@ -288,11 +274,7 @@ const RoutingTab = () => {
             setError(null);
             try {
                 const response = await adminService.getRoutingRules();
-                if (response.success) {
-                    setRouting(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch routing rules');
-                }
+                setRouting(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching routing rules:', err);
@@ -306,12 +288,8 @@ const RoutingTab = () => {
 
     const saveRouting = async () => {
         try {
-            const response = await adminService.updateRoutingRules(routing);
-            if (response.success) {
-                toast.success('Zapisano konfigurację routingu.');
-            } else {
-                throw new Error(response.message || 'Failed to save routing rules');
-            }
+            await adminService.updateRoutingRules(routing);
+            toast.success('Zapisano konfigurację routingu.');
         } catch (err) {
             toast.error('Nie udało się zapisać konfiguracji routingu.');
             console.error('Error saving routing rules:', err);
@@ -415,11 +393,7 @@ const DepartmentsTab = () => {
             setError(null);
             try {
                 const response = await adminService.getDepartments();
-                if (response.success) {
-                    setDepartments(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch departments');
-                }
+                setDepartments(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching departments:', err);
@@ -433,14 +407,9 @@ const DepartmentsTab = () => {
 
     const remove = async (id) => {
         try {
-            const response = await adminService.deleteDepartment(id);
-            if (response.success) {
-                toast.success('Usunięto wydział.');
-                // Optionally, refetch the departments
-                setDepartments(prev => prev.filter(d => d.id !== id));
-            } else {
-                throw new Error(response.message || 'Failed to delete department');
-            }
+            await adminService.deleteDepartment(id);
+            toast.success('Usunięto wydział.');
+            setDepartments(prev => prev.filter(d => d.id !== id));
         } catch (err) {
             toast.error('Nie udało się usunąć wydziału.');
             console.error('Error deleting department:', err);
@@ -450,14 +419,9 @@ const DepartmentsTab = () => {
     const createDepartment = async (departmentData) => {
         try {
             const response = await adminService.createDepartment(departmentData);
-            if (response.success) {
-                toast.success('Dodano wydział.');
-                setDialog(null);
-                // Optionally, refetch the departments
-                setDepartments(prev => [...prev, { ...response.data, id: response.data.id }]);
-            } else {
-                throw new Error(response.message || 'Failed to create department');
-            }
+            toast.success('Dodano wydział.');
+            setDialog(null);
+            setDepartments(prev => [...prev, { ...response, id: response.id }]);
         } catch (err) {
             toast.error('Nie udało się dodać wydziału.');
             console.error('Error creating department:', err);
@@ -466,15 +430,10 @@ const DepartmentsTab = () => {
 
     const updateDepartment = async (id, departmentData) => {
         try {
-            const response = await adminService.updateDepartment(id, departmentData);
-            if (response.success) {
-                toast.success('Zaktualizowano wydział.');
-                setDialog(null);
-                // Optionally, refetch the departments
-                setDepartments(prev => prev.map(d => d.id === id ? { ...d, ...departmentData } : d));
-            } else {
-                throw new Error(response.message || 'Failed to update department');
-            }
+            await adminService.updateDepartment(id, departmentData);
+            toast.success('Zaktualizowano wydział.');
+            setDialog(null);
+            setDepartments(prev => prev.map(d => d.id === id ? { ...d, ...departmentData } : d));
         } catch (err) {
             toast.error('Nie udało się zaktualizować wydziału.');
             console.error('Error updating department:', err);
@@ -617,11 +576,7 @@ const StatsTab = () => {
             setError(null);
             try {
                 const response = await adminService.getStats();
-                if (response.success) {
-                    setStats(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch statistics');
-                }
+                setStats(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching statistics:', err);
@@ -761,11 +716,7 @@ const UsersTab = () => {
             setError(null);
             try {
                 const response = await adminService.getUsers();
-                if (response.success) {
-                    setUsers(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch users');
-                }
+                setUsers(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching users:', err);
@@ -779,13 +730,9 @@ const UsersTab = () => {
 
     const removeUser = async (id) => {
         try {
-            const response = await adminService.deleteUser(id);
-            if (response.success) {
-                toast.success('Konto użytkownika usunięte.');
-                setUsers(prev => prev.filter(u => u.id !== id));
-            } else {
-                throw new Error(response.message || 'Failed to delete user');
-            }
+            await adminService.deleteUser(id);
+            toast.success('Konto użytkownika usunięte.');
+            setUsers(prev => prev.filter(u => u.id !== id));
         } catch (err) {
             toast.error('Nie udało się usunąć konta użytkownika.');
             console.error('Error deleting user:', err);

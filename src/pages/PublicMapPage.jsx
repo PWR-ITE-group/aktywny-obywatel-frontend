@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, IconButton, Fab, Stack } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -11,36 +11,45 @@ import TuneIcon from '@mui/icons-material/Tune';
 import ReportMap from '../components/Map/ReportMap';
 import PropertyBottomSheet from '../components/Map/PropertyBottomSheet';
 import { MOCK_REPORTS } from '../config/mapConfig';
+import { complaintService } from '../services/complaintService';
 
 const PublicMapPage = () => {
     const navigate = useNavigate();
     const [filters] = useState({ status: '', category: '' });
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
 
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                const data = await complaintService.getAll();
+                setReports(data);
+            } catch (error) {
+                console.error('Failed to load reports for map:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchReports();
+    }, []);
+
     const filteredReports = useMemo(() => {
-        return MOCK_REPORTS.filter((r) => {
+        return reports.filter((r) => {
             if (filters.status && r.status !== filters.status) return false;
             if (filters.category && r.category !== filters.category) return false;
             return true;
         });
-    }, [filters]);
+    }, [filters, reports]);
 
     // Kliknięcie markera -> otwórz bottom sheet z danymi tego zgłoszenia
     const handleMarkerClick = (report) => {
         setSelected({
             id: report.id,
             title: report.title,
-            address: `${report.category} • ${report.createdAt}`,
+            description: report.description,
+            address: `${report.address?.street ? `${report.address.street} ${report.address.houseNumber || ''}`.trim() : (report.address?.displayName || 'Brak adresu')} • ${new Date(report.createdAt).toLocaleDateString()}`,
             isFavorite: false,
-            nearby: filteredReports
-                .filter((r) => r.id !== report.id)
-                .slice(0, 3)
-                .map((r) => ({
-                    id: r.id,
-                    title: r.title,
-                    subtitle: r.description,
-                    distance: '~120 m',
-                })),
         });
     };
 

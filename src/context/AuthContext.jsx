@@ -9,25 +9,33 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState(localStorage.getItem('token'));
 
+    const parseJwt = (token) => {
+        try {
+            return JSON.parse(atob(token.split('.')[1]));
+        } catch (e) {
+            return null;
+        }
+    };
+
     useEffect(() => {
         const initializeAuth = async () => {
             const savedToken = localStorage.getItem('token');
             if (savedToken) {
                 setToken(savedToken);
-                // Try to get user profile when token is available
                 try {
-                    const profileResult = await userService.getCurrentProfile();
-                    if (profileResult.success) {
-                        setUser(profileResult.data);
-                    }
+                    const profile = await userService.getCurrentProfile();
+                    setUser(profile);
                 } catch (error) {
                     console.error('Failed to load user profile:', error);
-                    // If we can't get profile, at least set token so auth checks work
-                    setUser({}); // Empty object to avoid null errors
+                    const tokenData = parseJwt(savedToken);
+                    setUser({
+                        id: 1, // Fallback ID
+                        email: tokenData?.sub || 'user@example.com',
+                        role: 'user' // Default role
+                    });
                 }
-            } else {
-                setLoading(false);
             }
+            setLoading(false);
         };
 
         initializeAuth();
@@ -36,35 +44,30 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const result = await authService.login(email, password);
-            if (result.success) {
-                setToken(result.data.token);
-                localStorage.setItem('token', result.data.token);
-                // Get full user profile
-                const profileResult = await userService.getCurrentProfile();
-                if (profileResult.success) {
-                    setUser(profileResult.data);
-                } else {
-                    // Fallback to basic info from login response
-                    setUser({
-                        email: result.data.email,
-                        role: result.data.role,
-                        ...result.data  // Include any other fields from login response
-                    });
-                }
+            setToken(result.token);
+            localStorage.setItem('token', result.token);
+            try {
+                const profile = await userService.getCurrentProfile();
+                setUser(profile);
+            } catch {
+                setUser({
+                    id: 1, // Fallback ID
+                    email: result.email,
+                    role: result.role || 'user',
+                    ...result
+                });
             }
             return result;
         } catch (error) {
             console.error('Login error:', error);
-            return { success: false, message: error.message || "Błąd serwera" };
+            throw error;
         }
     };
 
     const register = async (email, password, phoneNumber, firstName, lastName) => {
         try {
             const result = await authService.register(email, password, phoneNumber, firstName, lastName);
-            if (result.success) {
-                console.log(window.location.origin + "/weryfikacja?token=" + result.data.verificationToken);
-            }
+            console.log(window.location.origin + "/weryfikacja?token=" + result.verificationToken);
             return result;
         } catch (error) {
             console.error('Registration error:', error);

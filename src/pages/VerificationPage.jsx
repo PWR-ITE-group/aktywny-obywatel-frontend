@@ -29,15 +29,10 @@ const VerificationPage = () => {
         lastAttemptedTokenRef.current = token;
 
         api.post(`/api/auth/verify?token=${token}`)
-            .then((response) => {
-                if (response.data.success) {
-                    setStatus('success');
-                    // Przekieruj do logowania po 3 sekundach
-                    setTimeout(() => navigate('/logowanie'), 3000);
-                } else {
-                    setStatus('error');
-                    setMessage(response.data.message || 'Weryfikacja nie powiodła się.');
-                }
+            .then(() => {
+                setStatus('success');
+                // Przekieruj do logowania po 3 sekundach
+                setTimeout(() => navigate('/logowanie'), 3000);
             })
             .catch((error) => {
                 setStatus('error');

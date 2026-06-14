@@ -1,28 +1,37 @@
 import {
     Drawer, Box, Typography, IconButton, List, ListItemButton,
-    ListItemIcon, ListItemText, Button, Divider, Stack,
+    ListItemIcon, ListItemText, Button, Divider, Stack, Dialog
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
+import { useState, useEffect } from 'react';
+import { complaintService } from '../../services/complaintService';
+import { useNavigate } from 'react-router-dom';
 
-// Bottom sheet pokazujący szczegóły obiektu/adresu — jak na screenach 2 i 4.
-// Props:
-//   open, onClose       - sterowanie widocznością
-//   property            - { id, title, address, type, isFavorite }
-//   nearbyItems         - lista powiązanych obiektów pod tym adresem
-//   onSelect            - callback po "Wybierz obiekt"
-//   onToggleFavorite    - callback po kliknięciu zakładki
 const PropertyBottomSheet = ({
                                  open,
                                  onClose,
                                  property,
-                                 nearbyItems = [],
                                  onSelect,
                                  onToggleFavorite,
                              }) => {
+    const navigate = useNavigate();
+    const [attachments, setAttachments] = useState([]);
+    const [selectedImage, setSelectedImage] = useState(null);
+
+    useEffect(() => {
+        if (open && property?.id) {
+            complaintService.getAttachments(property.id)
+                .then(att => setAttachments(att || []))
+                .catch(() => setAttachments([]));
+        } else {
+            setAttachments([]);
+        }
+    }, [open, property?.id]);
+
     if (!property) return null;
 
     return (
@@ -30,7 +39,6 @@ const PropertyBottomSheet = ({
             anchor="bottom"
             open={open}
             onClose={onClose}
-            // ModalProps: żeby nie łapać całego ekranu (tło przezroczyste, można przesuwać mapę)
             ModalProps={{ BackdropProps: { sx: { bgcolor: 'transparent' } } }}
             PaperProps={{
                 sx: {
@@ -41,7 +49,6 @@ const PropertyBottomSheet = ({
                 },
             }}
         >
-            {/* Drag handle */}
             <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1, pb: 1 }}>
                 <Box sx={{ width: 36, height: 4, borderRadius: 2, bgcolor: 'grey.300' }} />
             </Box>
@@ -64,15 +71,14 @@ const PropertyBottomSheet = ({
 
             <Divider />
 
-            {/* Akcje */}
             <List disablePadding>
                 <ListItemButton>
                     <ListItemIcon sx={{ minWidth: 40 }}>
                         <InfoOutlinedIcon color="primary" />
                     </ListItemIcon>
                     <ListItemText
-                        primary="Informacje o nieruchomości"
-                        primaryTypographyProps={{ fontSize: '0.9375rem' }}
+                        primary={property.description || "Brak opisu"}
+                        primaryTypographyProps={{ fontSize: '0.9375rem', style: { whiteSpace: 'pre-wrap' } }}
                     />
                 </ListItemButton>
                 <ListItemButton onClick={onToggleFavorite}>
@@ -88,52 +94,61 @@ const PropertyBottomSheet = ({
                 </ListItemButton>
             </List>
 
-            {/* Lista "Obiekty w pobliżu" / właściwości pod adresem */}
-            {nearbyItems.length > 0 && (
+            {attachments && attachments.length > 0 && (
                 <>
                     <Divider />
                     <Box sx={{ px: 2, pt: 1.5 }}>
-                        <Typography
-                            variant="overline"
-                            color="text.secondary"
-                            sx={{ letterSpacing: '0.08em' }}
-                        >
-                            OBIEKTY W POBLIŻU
+                        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.08em' }}>
+                            ZAŁĄCZONE ZDJĘCIA
                         </Typography>
-                    </Box>
-                    <List disablePadding>
-                        {nearbyItems.map((item) => (
-                            <ListItemButton key={item.id}>
-                                <ListItemIcon sx={{ minWidth: 40 }}>
-                                    <LocationOnOutlinedIcon color="action" />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={item.title}
-                                    secondary={item.subtitle}
-                                    primaryTypographyProps={{ fontSize: '0.9375rem', fontWeight: 500 }}
+                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1, mt: 1 }}>
+                            {attachments.map((att) => (
+                                <Box
+                                    key={att.id}
+                                    component="img"
+                                    src={`/api/complaints/attachments/${att.id}/download`}
+                                    alt="Załącznik"
+                                    onClick={() => setSelectedImage(`/api/complaints/attachments/${att.id}/download`)}
+                                    sx={{
+                                        height: 100,
+                                        borderRadius: 1,
+                                        objectFit: 'cover',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        cursor: 'pointer',
+                                    }}
                                 />
-                                {item.distance && (
-                                    <Typography variant="caption" color="text.secondary">
-                                        {item.distance}
-                                    </Typography>
-                                )}
-                            </ListItemButton>
-                        ))}
-                    </List>
+                            ))}
+                        </Stack>
+                    </Box>
                 </>
             )}
 
-            {/* Duży primary CTA */}
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ p: 2, pt: 1 }}>
                 <Button
-                    fullWidth
                     variant="contained"
+                    fullWidth
                     size="large"
-                    onClick={onSelect}
+                    onClick={() => {
+                        navigate(`/zgloszenie/${property.id}`);
+                    }}
                 >
-                    Wybierz obiekt
+                    Zobacz szczegóły
                 </Button>
             </Box>
+
+            {/* Modal ze zdjęciem */}
+            <Dialog open={!!selectedImage} onClose={() => setSelectedImage(null)} maxWidth="md">
+                <Box sx={{ position: 'relative' }}>
+                    <IconButton
+                        onClick={() => setSelectedImage(null)}
+                        sx={{ position: 'absolute', right: 8, top: 8, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }, zIndex: 1 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                    <Box component="img" src={selectedImage} sx={{ width: '100%', height: 'auto', display: 'block', maxHeight: '90vh', objectFit: 'contain' }} />
+                </Box>
+            </Dialog>
         </Drawer>
     );
 };
