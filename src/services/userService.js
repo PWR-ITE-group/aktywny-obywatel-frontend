@@ -4,6 +4,7 @@ const USE_MOCK = true;
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 const MOCK_USER = {
+  id: 1,
   email: 'user@example.com',
   firstName: 'Jan',
   lastName: 'Kowalski',
@@ -11,6 +12,15 @@ const MOCK_USER = {
 };
 
 export const userService = {
+  async getCurrentProfile() {
+    if (USE_MOCK) {
+      await delay(300);
+      return { success: true, data: MOCK_USER };
+    }
+    const { data } = await api.get('/api/users/profile');
+    return { success: true, data };
+  },
+
   async updateProfile(data) {
     if (USE_MOCK) {
       await delay(500);

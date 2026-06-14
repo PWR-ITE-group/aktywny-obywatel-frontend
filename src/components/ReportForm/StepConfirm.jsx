@@ -4,11 +4,10 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createColoredIcon } from '../../utils/leafletIcons';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
-// Podsumowanie przed wysłaniem — użytkownik widzi wszystko co za chwilę pójdzie
-// do urzędu (zgodne z WNF-24 krok 4 = potwierdzenie).
 
 const StepConfirm = ({ formData }) => {
-    const { category, description, photos, location } = formData;
+    // POPRAWKA: Wyciągamy categoryLabel oraz title zamiast nieistniejącego category
+    const { categoryLabel, title, description, photos, location } = formData;
     const [previews, setPreviews] = useState([]);
 
     useEffect(() => {
@@ -26,13 +25,19 @@ const StepConfirm = ({ formData }) => {
         <Stack spacing={2.5}>
             <Alert severity="info" icon={false}>
                 Sprawdź dane przed złożeniem zgłoszenia. Po wysłaniu zostanie ono przekazane
-                do właściwego wydziału Urzędu Miejskiego Wrocławia.
+                do właściwej jednostki Urzędu Miejskiego Wrocławia.
             </Alert>
 
+            {/* POPRAWKA: Renderowanie grupy kategorii oraz szczegółowego tematu */}
             <Section label="Kategoria / temat">
-                {category
-                    ? <Chip label={category} color="primary" />
-                    : <Typography color="error" variant="body2">Nie wybrano</Typography>}
+                {categoryLabel || title ? (
+                    <Stack direction="column" spacing={1} alignItems="flex-start">
+                        {categoryLabel && <Chip label={categoryLabel} color="primary" variant="combined" sx={{ fontWeight: 600 }} />}
+                        {title && <Typography variant="body2" fontWeight={500} color="text.primary" sx={{ mt: 0.5 }}>{title}</Typography>}
+                    </Stack>
+                ) : (
+                    <Typography color="error" variant="body2">Nie wybrano</Typography>
+                )}
             </Section>
 
             <Section label="Opis">
@@ -40,6 +45,7 @@ const StepConfirm = ({ formData }) => {
                     {description?.trim() || <i style={{ color: '#9CA3AF' }}>— brak opisu —</i>}
                 </Typography>
             </Section>
+
             {formData.priority && (
                 <Section label="Priorytet">
                     <Alert severity="warning" icon={<PriorityHighIcon />}>
@@ -47,6 +53,7 @@ const StepConfirm = ({ formData }) => {
                     </Alert>
                 </Section>
             )}
+
             <Section label={`Zdjęcia (${previews.length})`}>
                 {previews.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">

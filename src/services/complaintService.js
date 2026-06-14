@@ -1,7 +1,7 @@
 // complaintService.js
 import api from '../config/api';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 // SYMULACJA TABELI W BAZIE DANYCH (To tu admin będzie robił zmiany)
@@ -89,7 +89,7 @@ const MOCK_CATEGORIES_FROM_DB = [
         label: 'Palenie odpadów',
         color: '#F4511E',
         email: 'straz@smwroclaw.pl',
-        topics: ['Palenie odpadów / podejrzany dym z komina'],
+        topics: ['Palenie odpadów / podezrzany dym z komina'],
     },
     {
         id: 'parking',
@@ -206,6 +206,41 @@ export const complaintService = {
             };
         }
         const { data } = await api.post('/api/complaints', complaintData);
+        return data.data;
+    },
+
+    // METODA DO DODAWANIA ZAŁĄCZNIKÓW
+    async addAttachment(complaintId, file) {
+        if (USE_MOCK) {
+            await delay(500);
+            // Symulacja sukcesu
+            return {
+                id: Date.now(),
+                complaintId,
+                filename: file.name,
+                uploadedAt: new Date().toISOString(),
+            };
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data } = await api.post(`/api/complaints/${complaintId}/attachments`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return data.data;
+    },
+
+    // METODA DO POBIERANIA ZAŁĄCZNIKÓW
+    async getAttachments(complaintId) {
+        if (USE_MOCK) {
+            await delay(300);
+            // Zwracamy pustą listę w trybie mock
+            return [];
+        }
+        const { data } = await api.get(`/api/complaints/${complaintId}/attachments`);
         return data.data;
     },
 };
