@@ -1,8 +1,8 @@
-
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
     Container, Box, Stack, Typography, Chip, Paper, Grid, Button, AppBar, Toolbar, IconButton,
-    Divider,
+    Divider, Dialog
 } from '@mui/material';
 import {
     Timeline, TimelineItem, TimelineSeparator, TimelineDot, TimelineConnector, TimelineContent, TimelineOppositeContent,
@@ -13,11 +13,14 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SendIcon from '@mui/icons-material/Send';
+import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS } from '../config/mapConfig';
 import { createColoredIcon } from '../utils/leafletIcons';
+import { complaintService } from '../services/complaintService';
 
 // WF-16: pełna historia zgłoszenia. WF-04 dla gościa — bez danych zgłaszającego.
 
@@ -62,9 +65,50 @@ const buildHistory = (report) => {
 const ReportDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const report = MOCK_REPORTS.find((r) => String(r.id) === String(id));
+    const [report, setReport] = useState(null);
+    const [attachments, setAttachments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
-    if (!report) {
+    useEffect(() => {
+        let mounted = true;
+        const fetchReport = async () => {
+            try {
+                const data = await complaintService.getById(id);
+                if (!mounted) return;
+                setReport(data);
+                
+                // Increment view count exactly once when opening the page
+                complaintService.incrementView(id).catch(err => console.error("Failed to increment view", err));
+
+                try {
+                    const attData = await complaintService.getAttachments(id);
+                    if (mounted) setAttachments(attData || []);
+                } catch (err) {
+                    console.error("Failed to fetch attachments:", err);
+                    if (mounted) setAttachments([]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch report detail:", err);
+                if (mounted) setError(true);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+        fetchReport();
+        return () => { mounted = false; };
+    }, [id]);
+
+    if (loading) {
+        return (
+            <Container sx={{ py: 4 }}>
+                <Typography variant="h6">Ładowanie...</Typography>
+            </Container>
+        );
+    }
+
+    if (error || !report) {
         return (
             <Container sx={{ py: 4 }}>
                 <Typography variant="h6">Nie znaleziono zgłoszenia.</Typography>
@@ -108,13 +152,42 @@ const ReportDetailPage = () => {
                         <Typography variant="h5" fontWeight={700} gutterBottom>
                             {report.title}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                            Zgłoszono: {report.createdAt}
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            Zgłoszono: {new Date(report.createdAt).toLocaleString()}
+                            <span style={{ margin: '0 4px' }}>•</span>
+                            <VisibilityIcon fontSize="small" /> {report.viewCount || 0}
                         </Typography>
                         <Divider sx={{ my: 1.5 }} />
                         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                             {report.description}
                         </Typography>
+
+                        {attachments && attachments.length > 0 && (
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                                    Załączone zdjęcia
+                                </Typography>
+                                <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
+                                    {attachments.map((att) => (
+                                        <Box
+                                            key={att.id}
+                                            component="img"
+                                            src={`/api/complaints/attachments/${att.id}/download`}
+                                            alt="Załącznik"
+                                            onClick={() => setSelectedImage(`/api/complaints/attachments/${att.id}/download`)}
+                                            sx={{
+                                                height: 120,
+                                                borderRadius: 1,
+                                                objectFit: 'cover',
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                                cursor: 'pointer',
+                                            }}
+                                        />
+                                    ))}
+                                </Stack>
+                            </Box>
+                        )}
                     </Paper>
 
                     {/* Mapa z lokalizacją */}
@@ -124,12 +197,12 @@ const ReportDetailPage = () => {
                                 Lokalizacja
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                                {report.lat.toFixed(5)}, {report.lng.toFixed(5)}
+                                {report.address?.street ? `${report.address.street} ${report.address.houseNumber || ''}`.trim() : (report.address?.displayName || 'Brak adresu')} ({report.address?.latitude?.toFixed(5) ?? report.lat?.toFixed(5)}, {report.address?.longitude?.toFixed(5) ?? report.lng?.toFixed(5)})
                             </Typography>
                         </Box>
                         <Box sx={{ height: 260, mt: 1 }}>
                             <MapContainer
-                                center={[report.lat, report.lng]}
+                                center={[report.address?.latitude ?? report.lat, report.address?.longitude ?? report.lng]}
                                 zoom={16}
                                 style={{ height: '100%', width: '100%' }}
                                 scrollWheelZoom={false}
@@ -139,8 +212,8 @@ const ReportDetailPage = () => {
                                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 />
                                 <Marker
-                                    position={[report.lat, report.lng]}
-                                    icon={createColoredIcon(STATUS_COLORS[report.status])}
+                                    position={[report.address?.latitude ?? report.lat, report.address?.longitude ?? report.lng]}
+                                    icon={createColoredIcon(STATUS_COLORS[report.status] || '#757575')}
                                 />
                             </MapContainer>
                         </Box>
@@ -179,6 +252,19 @@ const ReportDetailPage = () => {
                     </Paper>
                 </Stack>
             </Container>
+
+            {/* Modal ze zdjęciem */}
+            <Dialog open={!!selectedImage} onClose={() => setSelectedImage(null)} maxWidth="md">
+                <Box sx={{ position: 'relative' }}>
+                    <IconButton
+                        onClick={() => setSelectedImage(null)}
+                        sx={{ position: 'absolute', right: 8, top: 8, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }, zIndex: 1 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                    <Box component="img" src={selectedImage} sx={{ width: '100%', height: 'auto', display: 'block', maxHeight: '90vh', objectFit: 'contain' }} />
+                </Box>
+            </Dialog>
         </Box>
     );
 };
