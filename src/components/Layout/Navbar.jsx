@@ -120,7 +120,7 @@ const Navbar = () => {
                                             <ListItem disablePadding>
                                                 <ListItemButton
                                                     component={RouterLink}
-                                                    to="/login"
+                                                    to="/logowanie"
                                                     onClick={() => setDrawerOpen(false)}
                                                 >
                                                     <ListItemText primary="Zaloguj się" />
@@ -129,7 +129,7 @@ const Navbar = () => {
                                             <ListItem disablePadding>
                                                 <ListItemButton
                                                     component={RouterLink}
-                                                    to="/register"
+                                                    to="/rejestracja"
                                                     onClick={() => setDrawerOpen(false)}
                                                 >
                                                     <ListItemText primary="Zarejestruj się" />

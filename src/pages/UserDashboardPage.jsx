@@ -2,9 +2,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
     Container, Box, Typography, Tabs, Tab, Button, Card, CardContent, Stack, CircularProgress, Alert,
-    TextField, FormControl, InputLabel, Select, MenuItem
+    TextField, FormControl, InputLabel, Select, MenuItem, Avatar, Grid, Divider
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import EmailIcon from '@mui/icons-material/Email';
+import PhoneIcon from '@mui/icons-material/Phone';
+import SettingsIcon from '@mui/icons-material/Settings';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useAuth } from '../context/AuthContext';
 import ReportStatusCard from '../components/Dashboard/ReportStatusCard';
 import { complaintService } from '../services/complaintService';
@@ -110,6 +115,133 @@ const UserDashboardPage = () => {
 
     return (
         <Container maxWidth="md" sx={{ py: 3 }}>
+            {/* Karta Profilu Użytkownika */}
+            <Card variant="outlined" sx={{ mb: 4, background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', position: 'relative' }}>
+                <CardContent sx={{ p: 3 }}>
+                    <Grid container spacing={3} alignItems="center">
+                        {/* Avatar */}
+                        <Grid item>
+                            <Avatar 
+                                sx={{ 
+                                    width: 72, 
+                                    height: 72, 
+                                    bgcolor: 'primary.main', 
+                                    color: 'white',
+                                    fontSize: 28, 
+                                    fontWeight: 700,
+                                    boxShadow: '0 4px 10px rgba(91, 95, 237, 0.25)'
+                                }}
+                            >
+                                {user?.firstName && user?.lastName 
+                                    ? `${user.firstName[0].toUpperCase()}${user.lastName[0].toUpperCase()}`
+                                    : (user?.email?.[0]?.toUpperCase() || 'U')}
+                            </Avatar>
+                        </Grid>
+
+                        {/* Dane użytkownika */}
+                        <Grid item xs={12} sm>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                                <Typography variant="h5" fontWeight={700}>
+                                    {user?.firstName && user?.lastName 
+                                        ? `${user.firstName} ${user.lastName}` 
+                                        : 'Mieszkaniec'}
+                                </Typography>
+                                {user?.isVerified || user?.verified ? (
+                                    <Chip 
+                                        icon={<CheckCircleIcon fontSize="small" sx={{ color: 'success.main !important' }} />} 
+                                        label="Konto Zweryfikowane" 
+                                        size="small" 
+                                        color="success" 
+                                        variant="outlined"
+                                        sx={{ bgcolor: 'rgba(22, 163, 74, 0.05)', fontWeight: 600 }}
+                                    />
+                                ) : (
+                                    <Chip 
+                                        icon={<HelpOutlineIcon fontSize="small" sx={{ color: 'warning.main !important' }} />} 
+                                        label="Niezweryfikowany" 
+                                        size="small" 
+                                        color="warning" 
+                                        variant="outlined"
+                                        sx={{ bgcolor: 'rgba(245, 158, 11, 0.05)', fontWeight: 600 }}
+                                    />
+                                )}
+                                {user?.isAdmin && (
+                                    <Chip 
+                                        label="Administrator" 
+                                        size="small" 
+                                        color="secondary" 
+                                        sx={{ fontWeight: 600 }}
+                                    />
+                                )}
+                            </Box>
+                            
+                            <Stack spacing={0.5} sx={{ mt: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+                                    <EmailIcon fontSize="small" />
+                                    <Typography variant="body2">{user?.email}</Typography>
+                                </Box>
+                                {(user?.phone || user?.phoneNumber) && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+                                        <PhoneIcon fontSize="small" />
+                                        <Typography variant="body2">{user?.phone || user?.phoneNumber}</Typography>
+                                    </Box>
+                                )}
+                            </Stack>
+                        </Grid>
+
+                        {/* Przycisk Ustawień */}
+                        <Grid item>
+                            <Button
+                                variant="outlined"
+                                startIcon={<SettingsIcon />}
+                                component={RouterLink}
+                                to="/ustawienia"
+                                size="small"
+                                color="secondary"
+                            >
+                                Ustawienia
+                            </Button>
+                        </Grid>
+                    </Grid>
+
+                    <Divider sx={{ my: 2.5 }} />
+
+                    {/* Statystyki Zgłoszeń */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={4}>
+                            <Box sx={{ textAlign: 'center', p: 1.5, bgcolor: '#f4f5f7', borderRadius: 3 }}>
+                                <Typography variant="caption" color="text.secondary" display="block" fontWeight={500}>
+                                    Wszystkie zgłoszenia
+                                </Typography>
+                                <Typography variant="h6" fontWeight={700} color="primary.main">
+                                    {reports.length}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Box sx={{ textAlign: 'center', p: 1.5, bgcolor: 'rgba(245, 158, 11, 0.05)', borderRadius: 3, border: '1px solid rgba(245, 158, 11, 0.1)' }}>
+                                <Typography variant="caption" color="warning.main" display="block" fontWeight={500}>
+                                    W realizacji / Nowe
+                                </Typography>
+                                <Typography variant="h6" fontWeight={700} color="warning.main">
+                                    {reports.filter(r => r.status !== 'RESOLVED' && r.status !== 'zakończone' && r.status !== 'odrzucone').length}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Box sx={{ textAlign: 'center', p: 1.5, bgcolor: 'rgba(22, 163, 74, 0.05)', borderRadius: 3, border: '1px solid rgba(22, 163, 74, 0.1)' }}>
+                                <Typography variant="caption" color="success.main" display="block" fontWeight={500}>
+                                    Naprawione / Zamknięte
+                                </Typography>
+                                <Typography variant="h6" fontWeight={700} color="success.main">
+                                    {reports.filter(r => r.status === 'RESOLVED' || r.status === 'zakończone').length}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
+
             <Box
                 sx={{
                     display: 'flex',
@@ -119,14 +251,9 @@ const UserDashboardPage = () => {
                     gap: 1,
                 }}
             >
-                <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="h5" fontWeight={700}>
-                        Moje zgłoszenia
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                        Witaj, {user?.email}
-                    </Typography>
-                </Box>
+                <Typography variant="h5" fontWeight={700}>
+                    Moje zgłoszenia
+                </Typography>
                 <Button
                     variant="contained"
                     startIcon={<AddCircleOutlineIcon />}
@@ -134,7 +261,7 @@ const UserDashboardPage = () => {
                     to="/nowe-zgloszenie"
                     sx={{ flexShrink: 0 }}
                 >
-                    Nowe
+                    Nowe zgłoszenie
                 </Button>
             </Box>
 

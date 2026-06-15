@@ -116,6 +116,12 @@ const LoginPage = () => {
                         }}
                     />
 
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+                        <Link component={RouterLink} to="/reset-hasla" variant="body2">
+                            Zapomniałeś hasła?
+                        </Link>
+                    </Box>
+
                     <Button
                         type="submit"
                         fullWidth

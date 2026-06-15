@@ -82,7 +82,7 @@ const VerificationPage = () => {
                         <Alert severity="error" sx={{ mb: 3, textAlign: 'left' }}>
                             {message}
                         </Alert>
-                        <Button variant="contained" component={RouterLink} to="/register">
+                        <Button variant="contained" component={RouterLink} to="/rejestracja">
                             Zarejestruj się ponownie
                         </Button>
                     </Box>
