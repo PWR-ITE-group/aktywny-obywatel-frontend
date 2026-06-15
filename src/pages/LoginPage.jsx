@@ -33,7 +33,7 @@ const LoginPage = () => {
         setError('');
         setLoading(true);
         try {
-            await login(email, password);
+            const result = await login(email, password);
             toast.success('Zalogowano pomyślnie!');
             // Jeśli istnieje prefilledCategory z logowania przez chip, przekaż ją do formularza zgłoszenia
             if (prefilledCategory) {
@@ -41,12 +41,14 @@ const LoginPage = () => {
                     state: { prefilledCategory },
                     replace: true
                 });
+            } else if (result?.role === 'admin' || result?.isAdmin) {
+                navigate('/admin', { replace: true });
             } else {
                 navigate(from, { replace: true });
             }
         } catch (err) {
             console.log(err);
-            const msg = err.response?.data?.message || err.message || 'Błąd logowania';
+            const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Błąd logowania';
             setError(msg);
         } finally {
             setLoading(false);
