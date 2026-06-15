@@ -275,6 +275,15 @@ const ReportsTab = () => {
                                 <MenuItem value="ARCHIVED">Zarchiwizowano</MenuItem>
                             </Select>
                         </FormControl>
+                        <TextField
+                            label="Komentarz (opcjonalnie)"
+                            value={editDialog?.comment ?? ''}
+                            onChange={(e) => setEditDialog({ ...editDialog, comment: e.target.value })}
+                            fullWidth
+                            multiline
+                            rows={2}
+                            helperText="Ten komentarz zostanie zapisany w historii zmian zgłoszenia."
+                        />
                     </Stack>
                 </DialogContent>
                 <DialogActions>
@@ -289,7 +298,8 @@ const ReportsTab = () => {
                                     title: editDialog.title,
                                     category: editDialog.category,
                                     description: editDialog.description,
-                                    status: editDialog.status
+                                    status: editDialog.status,
+                                    comment: editDialog.comment
                                 });
                                 toast.success('Zaktualizowano zgłoszenie.');
                                 setReports(prev => prev.map(r => r.id === editDialog.id ? { ...r, ...editDialog } : r));

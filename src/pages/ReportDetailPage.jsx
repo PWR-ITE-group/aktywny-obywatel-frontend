@@ -29,35 +29,32 @@ const STATUS_STEPS = ['złożone', 'przyjęte', 'w realizacji', 'zakończone'];
 
 const statusIcon = (status) => {
     switch (status) {
-        case 'zakończone':   return <CheckCircleIcon />;
-        case 'w realizacji': return <HourglassEmptyIcon />;
-        case 'odrzucone':    return <CancelIcon />;
-        case 'przyjęte':     return <AccessTimeIcon />;
-        default:             return <SendIcon />;
+        case 'RESOLVED':   return <CheckCircleIcon />;
+        case 'ROUTED':
+        case 'NOTIFIED':   return <HourglassEmptyIcon />;
+        case 'ARCHIVED':   return <CancelIcon />;
+        case 'NEW':        return <SendIcon />;
+        default:           return <AccessTimeIcon />;
     }
 };
 
 // Prototyp — generujemy mockowaną historię na podstawie statusu końcowego
 const buildHistory = (report) => {
+    if (report.history && Array.isArray(report.history) && report.history.length > 0) {
+        return [...report.history].reverse().map(h => ({
+            status: h.newStatus,
+            at: new Date(h.createdAt).toLocaleString('pl-PL'),
+            comment: h.comment || (h.source === 'SYSTEM' ? 'Aktualizacja systemowa' : '')
+        }));
+    }
+
     const base = new Date(report.createdAt);
     const addDays = (d) => { const x = new Date(base); x.setDate(x.getDate() + d); return x.toLocaleDateString('pl-PL'); };
 
-    const entries = [{ status: 'złożone', at: addDays(0), comment: 'Zgłoszenie przyjęte przez system.' }];
-    if (report.status === 'odrzucone') {
-        entries.push({ status: 'odrzucone', at: addDays(2), comment: 'Zgłoszenie poza zakresem obsługi.' });
+    const entries = [{ status: 'NEW', at: addDays(0), comment: 'Zgłoszenie przyjęte przez system.' }];
+    if (report.status === 'ARCHIVED') {
+        entries.push({ status: 'ARCHIVED', at: addDays(2), comment: 'Zgłoszenie zostało zarchiwizowane.' });
         return entries;
-    }
-    const endIdx = STATUS_STEPS.indexOf(report.status);
-    for (let i = 1; i <= endIdx; i++) {
-        entries.push({
-            status: STATUS_STEPS[i],
-            at: addDays(i * 3),
-            comment: {
-                'przyjęte': 'Zgłoszenie przekazane do właściwego wydziału.',
-                'w realizacji': 'Rozpoczęto prace w terenie.',
-                'zakończone': 'Problem został rozwiązany.',
-            }[STATUS_STEPS[i]],
-        });
     }
     return entries;
 };
