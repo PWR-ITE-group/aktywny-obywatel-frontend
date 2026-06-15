@@ -24,6 +24,11 @@ export const AuthProvider = ({ children }) => {
                 setToken(savedToken);
                 try {
                     const profile = await userService.getCurrentProfile();
+                    if (profile.isAdmin) {
+                        profile.role = 'admin';
+                    } else {
+                        profile.role = 'user';
+                    }
                     setUser(profile);
                 } catch (error) {
                     console.error('Failed to load user profile:', error);
@@ -73,6 +78,11 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('token', result.token);
             try {
                 const profile = await userService.getCurrentProfile();
+                if (profile.isAdmin) {
+                    profile.role = 'admin';
+                } else {
+                    profile.role = 'user';
+                }
                 setUser(profile);
             } catch {
                 setUser({
