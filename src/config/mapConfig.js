@@ -13,6 +13,7 @@ export const STATUS_COLORS = {
     ROUTED: '#00897B',
     NOTIFIED: '#00897B',
     RESOLVED: '#2E7D32',
+    ARCHIVED: '#757575',
 };
 
 export const STATUS_LABELS = {
@@ -25,6 +26,7 @@ export const STATUS_LABELS = {
     ROUTED: 'W realizacji',
     NOTIFIED: 'W realizacji',
     RESOLVED: 'Zakończone',
+    ARCHIVED: 'Zarchiwizowano',
 };
 
 export const CATEGORIES = [

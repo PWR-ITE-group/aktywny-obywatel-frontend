@@ -6,42 +6,30 @@ const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 export const adminService = {
   // Reports management
   async getAllReports(filters = {}) {
-    if (useMock()) {
-      await delay(500);
-      // Return mock data from mapConfig
-      const { MOCK_REPORTS, STATUS_LABELS, STATUS_COLORS, CATEGORIES } = await import('../config/mapConfig');
-      let reports = [...MOCK_REPORTS];
-
-      if (filters.status) {
-        reports = reports.filter(r => r.status === filters.status);
-      }
-      if (filters.category) {
-        reports = reports.filter(r => r.category === filters.category);
-      }
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        reports = reports.filter(r =>
-          r.title.toLowerCase().includes(searchLower) ||
-          r.description.toLowerCase().includes(searchLower)
-        );
-      }
-
-      return reports.map(report => ({
-        ...report,
-        statusLabel: STATUS_LABELS[report.status] || report.status,
-        statusColor: STATUS_COLORS[report.status] || '#9E9E9E'
-      }));
-    }
-    const { data } = await api.get('/api/complaints', { params: filters });
-    return data;
+    const { data } = await api.get('/api/admin/complaints', { params: filters });
+    
+    const { STATUS_LABELS, STATUS_COLORS } = await import('../config/mapConfig');
+    
+    return data.map(item => ({
+      ...item.complaint,
+      author: item.author,
+      statusLabel: STATUS_LABELS[item.complaint.status] || item.complaint.status,
+      statusColor: STATUS_COLORS[item.complaint.status] || '#9E9E9E'
+    }));
   },
 
   async updateReportStatus(id, newStatus) {
-    if (useMock()) {
-      await delay(500);
-      return {};
-    }
-    const { data } = await api.put(`/api/admin/reports/${id}/status`, { status: newStatus });
+    const { data } = await api.put(`/api/admin/complaints/${id}/status`, { status: newStatus });
+    return data;
+  },
+
+  async updateReport(id, reportData) {
+    const { data } = await api.put(`/api/admin/complaints/${id}`, reportData);
+    return data;
+  },
+
+  async deleteReport(id) {
+    const { data } = await api.delete(`/api/admin/complaints/${id}`);
     return data;
   },
 
