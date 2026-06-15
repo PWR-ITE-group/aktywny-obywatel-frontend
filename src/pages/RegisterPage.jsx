@@ -52,7 +52,8 @@ const RegisterPage = () => {
         }
         setLoading(true);
         try {
-            await register(form.email, form.password, form.phone, form.firstName, form.lastName);
+            const cleanPhone = form.phone.replace(/[\s\-().]/g, '');
+            await register(form.email, form.password, cleanPhone, form.firstName, form.lastName);
             toast.success('Konto zostało utworzone! Sprawdź email w celu weryfikacji.');
             navigate('/dashboard');
         } catch {

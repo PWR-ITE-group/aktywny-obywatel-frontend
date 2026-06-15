@@ -1,12 +1,12 @@
 import api from '../config/api';
 
-const USE_MOCK = false;
+const useMock = () => localStorage.getItem('token') === 'mock.jwt.token';
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 export const adminService = {
   // Reports management
   async getAllReports(filters = {}) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       // Return mock data from mapConfig
       const { MOCK_REPORTS, STATUS_LABELS, STATUS_COLORS, CATEGORIES } = await import('../config/mapConfig');
@@ -37,7 +37,7 @@ export const adminService = {
   },
 
   async updateReportStatus(id, newStatus) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return {};
     }
@@ -46,7 +46,7 @@ export const adminService = {
   },
 
   async exportReportsCSV(filters = {}) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return { csvContent: 'id,title,category,status,lat,lng,createdAt\n1,Test,Drogi i chodniki,złożone,51.1079,17.0385,2026-04-10' };
     }
@@ -59,7 +59,7 @@ export const adminService = {
 
   // Routing management
   async getRoutingRules() {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       const { CATEGORIES } = await import('../config/mapConfig');
       return CATEGORIES.map(category => ({
@@ -73,7 +73,7 @@ export const adminService = {
   },
 
   async updateRoutingRules(rules) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return {};
     }
@@ -83,7 +83,7 @@ export const adminService = {
 
   // Departments management
   async getDepartments() {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return [
         { id: 1, name: 'ZDiUM', email: 'zdium@um.wroc.pl', apiUrl: 'https://mock-urzad.local/zdium' },
@@ -96,7 +96,7 @@ export const adminService = {
   },
 
   async createDepartment(departmentData) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return { ...departmentData, id: Date.now() };
     }
@@ -105,7 +105,7 @@ export const adminService = {
   },
 
   async updateDepartment(id, departmentData) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return {};
     }
@@ -114,7 +114,7 @@ export const adminService = {
   },
 
   async deleteDepartment(id) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return {};
     }
@@ -124,7 +124,7 @@ export const adminService = {
 
   // Statistics
   async getStats() {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       const { MOCK_REPORTS, STATUS_LABELS } = await import('../config/mapConfig');
 
@@ -170,7 +170,7 @@ export const adminService = {
 
   // Users management
   async getUsers(filters = {}) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return [
         { id: 1, email: 'jan.kowalski@aktywnyobywatel.pl', createdAt: '2026-01-15', reports: 3, role: 'user' },
@@ -187,7 +187,7 @@ export const adminService = {
   },
 
   async deleteUser(id) {
-    if (USE_MOCK) {
+    if (useMock()) {
       await delay(500);
       return {};
     }

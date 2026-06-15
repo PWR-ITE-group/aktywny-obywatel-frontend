@@ -16,7 +16,8 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         const originalRequestUrl = error.config?.url;
-        if (error.response?.status === 401 && !originalRequestUrl.includes('/login')) {
+        const isMockToken = localStorage.getItem('token') === 'mock.jwt.token';
+        if (error.response?.status === 401 && !originalRequestUrl.includes('/login') && !isMockToken) {
             localStorage.removeItem('token');
             window.location.href = '/logowanie';
         }

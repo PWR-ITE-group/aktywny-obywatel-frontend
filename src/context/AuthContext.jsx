@@ -27,12 +27,22 @@ export const AuthProvider = ({ children }) => {
                     setUser(profile);
                 } catch (error) {
                     console.error('Failed to load user profile:', error);
-                    const tokenData = parseJwt(savedToken);
-                    setUser({
-                        id: 1, // Fallback ID
-                        email: tokenData?.sub || 'user@example.com',
-                        role: 'user' // Default role
-                    });
+                    if (savedToken === 'mock.jwt.token') {
+                        setUser({
+                            id: 999,
+                            email: 'admin@test.pl',
+                            role: 'admin',
+                            firstName: 'Tester',
+                            lastName: 'Admin'
+                        });
+                    } else {
+                        const tokenData = parseJwt(savedToken);
+                        setUser({
+                            id: 1, // Fallback ID
+                            email: tokenData?.sub || 'user@example.com',
+                            role: 'user' // Default role
+                        });
+                    }
                 }
             }
             setLoading(false);
@@ -43,6 +53,21 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
+            if (email === 'admin@test.pl' && password === 'admin123') {
+                const mockAdminUser = {
+                    id: 999,
+                    email: 'admin@test.pl',
+                    role: 'admin',
+                    firstName: 'Tester',
+                    lastName: 'Admin'
+                };
+                const mockToken = "mock.jwt.token"; 
+                setToken(mockToken);
+                localStorage.setItem('token', mockToken);
+                setUser(mockAdminUser);
+                return { token: mockToken, ...mockAdminUser };
+            }
+
             const result = await authService.login(email, password);
             setToken(result.token);
             localStorage.setItem('token', result.token);

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
     Container, Box, Typography, Tabs, Tab, Button, Card, CardContent, Stack, CircularProgress, Alert,
-    TextField, FormControl, InputLabel, Select, MenuItem, Avatar, Grid, Divider
+    TextField, FormControl, InputLabel, Select, MenuItem, Avatar, Grid, Divider, Chip
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EmailIcon from '@mui/icons-material/Email';
@@ -189,19 +189,6 @@ const UserDashboardPage = () => {
                             </Stack>
                         </Grid>
 
-                        {/* Przycisk Ustawień */}
-                        <Grid item>
-                            <Button
-                                variant="outlined"
-                                startIcon={<SettingsIcon />}
-                                component={RouterLink}
-                                to="/ustawienia"
-                                size="small"
-                                color="secondary"
-                            >
-                                Ustawienia
-                            </Button>
-                        </Grid>
                     </Grid>
 
                     <Divider sx={{ my: 2.5 }} />
