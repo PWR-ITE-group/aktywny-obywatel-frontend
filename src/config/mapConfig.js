@@ -23,7 +23,7 @@ export const STATUS_LABELS = {
     zakończone: 'Zakończone',
     odrzucone: 'Odrzucone',
     NEW: 'Przyjęte',
-    ROUTED: 'W realizacji',
+    ROUTED: 'Przekazane',
     NOTIFIED: 'W realizacji',
     RESOLVED: 'Zakończone',
     ARCHIVED: 'Zarchiwizowano',
