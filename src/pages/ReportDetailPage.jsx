@@ -21,6 +21,8 @@ import 'leaflet/dist/leaflet.css';
 import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS } from '../config/mapConfig';
 import { createColoredIcon } from '../utils/leafletIcons';
 import { complaintService } from '../services/complaintService';
+import { adminService } from '../services/adminService';
+import { useAuth } from '../context/AuthContext';
 
 // WF-16: pełna historia zgłoszenia. WF-04 dla gościa — bez danych zgłaszającego.
 
@@ -63,6 +65,7 @@ const buildHistory = (report) => {
 const ReportDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [report, setReport] = useState(null);
     const [attachments, setAttachments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -73,7 +76,14 @@ const ReportDetailPage = () => {
         let mounted = true;
         const fetchReport = async () => {
             try {
-                const data = await complaintService.getById(id);
+                let data;
+                if (user?.isAdmin) {
+                    const response = await adminService.getReportById(id);
+                    data = { ...response.complaint, author: response.author };
+                } else {
+                    data = await complaintService.getById(id);
+                }
+                
                 if (!mounted) return;
                 setReport(data);
                 
@@ -150,6 +160,11 @@ const ReportDetailPage = () => {
                         <Typography variant="h5" fontWeight={700} gutterBottom>
                             {report.title}
                         </Typography>
+                        {report.author && (
+                            <Typography variant="body2" color="primary.main" fontWeight={500} sx={{ mb: 1 }}>
+                                Zgłaszający: {report.author.firstName} ({report.author.email})
+                            </Typography>
+                        )}
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                             Zgłoszono: {new Date(report.createdAt).toLocaleString()}
                             <span style={{ margin: '0 4px' }}>•</span>

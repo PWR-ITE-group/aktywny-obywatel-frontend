@@ -18,6 +18,11 @@ export const adminService = {
     }));
   },
 
+  async getReportById(id) {
+    const { data } = await api.get(`/api/admin/complaints/${id}`);
+    return data;
+  },
+
   async updateReportStatus(id, newStatus) {
     const { data } = await api.put(`/api/admin/complaints/${id}/status`, { status: newStatus });
     return data;

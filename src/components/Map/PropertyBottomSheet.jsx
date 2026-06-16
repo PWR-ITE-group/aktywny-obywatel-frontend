@@ -62,6 +62,11 @@ const PropertyBottomSheet = ({
                         <Typography variant="body2" color="text.secondary">
                             {property.address}
                         </Typography>
+                        {property.author && (
+                            <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                Zgłaszający: {property.author.firstName} ({property.author.email})
+                            </Typography>
+                        )}
                     </Box>
                     <IconButton size="small" onClick={onClose} aria-label="Zamknij">
                         <CloseIcon fontSize="small" />

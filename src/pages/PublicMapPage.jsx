@@ -12,8 +12,11 @@ import ReportMap from '../components/Map/ReportMap';
 import PropertyBottomSheet from '../components/Map/PropertyBottomSheet';
 import { MOCK_REPORTS, STATUS_LABELS, STATUS_COLORS } from '../config/mapConfig';
 import { complaintService } from '../services/complaintService';
+import { adminService } from '../services/adminService';
+import { useAuth } from '../context/AuthContext';
 
 const PublicMapPage = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [filters] = useState({ status: '', category: '' });
     const [reports, setReports] = useState([]);
@@ -25,7 +28,12 @@ const PublicMapPage = () => {
     useEffect(() => {
         const fetchReports = async () => {
             try {
-                const data = await complaintService.getAll();
+                let data;
+                if (user?.isAdmin) {
+                    data = await adminService.getAllReports();
+                } else {
+                    data = await complaintService.getAll();
+                }
                 setReports(data);
             } catch (error) {
                 console.error('Failed to load reports for map:', error);
@@ -53,6 +61,7 @@ const PublicMapPage = () => {
             description: report.description,
             address: `${report.address?.street ? `${report.address.street} ${report.address.houseNumber || ''}`.trim() : (report.address?.displayName || 'Brak adresu')} • ${new Date(report.createdAt).toLocaleDateString()}`,
             isFavorite: false,
+            author: report.author,
         });
     };
 
