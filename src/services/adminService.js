@@ -5,17 +5,20 @@ const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 export const adminService = {
   // Reports management
-  async getAllReports(filters = {}) {
-    const { data } = await api.get('/api/admin/complaints', { params: filters });
+  async getAllReports(filters = {}, page = 0, size = 20) {
+    const { data } = await api.get('/api/admin/complaints', { params: { ...filters, page, size } });
     
     const { STATUS_LABELS, STATUS_COLORS } = await import('../config/mapConfig');
     
-    return data.map(item => ({
+    // data is now a PagedResponseDto
+    const mappedContent = data.content.map(item => ({
       ...item.complaint,
       author: item.author,
       statusLabel: STATUS_LABELS[item.complaint.status] || item.complaint.status,
       statusColor: STATUS_COLORS[item.complaint.status] || '#9E9E9E'
     }));
+    
+    return { ...data, content: mappedContent };
   },
 
   async getReportById(id) {

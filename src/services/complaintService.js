@@ -183,13 +183,34 @@ export const complaintService = {
         return data;
     },
 
-    async getAll() {
+    async getAll(page = 0, size = 20) {
+        if (USE_MOCK) {
+            await delay(300);
+            return { content: [], totalPages: 0, totalElements: 0, pageNumber: 0, pageSize: 20 };
+        }
+        const { data } = await api.get('/api/complaints', { params: { page, size } });
+        return data; // Returns PagedResponseDto
+    },
+
+    async getMapReports(bounds) {
         if (USE_MOCK) {
             await delay(300);
             return [];
         }
-        const { data } = await api.get('/api/complaints');
-        return data;
+        const { minLat, maxLat, minLng, maxLng } = bounds;
+        const { data } = await api.get('/api/complaints/map', { 
+            params: { minLat, maxLat, minLng, maxLng } 
+        });
+        return data; // Returns List<ComplaintResponseDto>
+    },
+
+    async getUserReports(userId, page = 0, size = 20) {
+        if (USE_MOCK) {
+            await delay(300);
+            return { content: [], totalPages: 0, totalElements: 0, pageNumber: 0, pageSize: 20 };
+        }
+        const { data } = await api.get('/api/complaints/my', { params: { userId, page, size } });
+        return data; // Returns PagedResponseDto
     },
 
     async getById(id) {

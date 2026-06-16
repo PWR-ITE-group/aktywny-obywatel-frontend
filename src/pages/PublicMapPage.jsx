@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, IconButton, Fab, Stack, Popover, FormGroup, FormControlLabel, Checkbox, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -25,23 +25,16 @@ const PublicMapPage = () => {
     const [visibleStatuses, setVisibleStatuses] = useState(['ROUTED', 'NOTIFIED']);
     const [filterAnchorEl, setFilterAnchorEl] = useState(null);
 
-    useEffect(() => {
-        const fetchReports = async () => {
-            try {
-                let data;
-                if (user?.isAdmin) {
-                    data = await adminService.getAllReports();
-                } else {
-                    data = await complaintService.getAll();
-                }
-                setReports(data);
-            } catch (error) {
-                console.error('Failed to load reports for map:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchReports();
+    const handleBoundsChange = useCallback(async (bounds) => {
+        setLoading(true);
+        try {
+            const data = await complaintService.getMapReports(bounds);
+            setReports(data);
+        } catch (error) {
+            console.error('Failed to load reports for map:', error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     const filteredReports = useMemo(() => {
@@ -54,24 +47,33 @@ const PublicMapPage = () => {
     }, [filters, reports, visibleStatuses]);
 
     // Kliknięcie markera -> otwórz bottom sheet z danymi tego zgłoszenia
-    const handleMarkerClick = (report) => {
+    const handleMarkerClick = async (report) => {
+        let author = null;
+        if (user?.isAdmin) {
+            try {
+                const detail = await adminService.getReportById(report.id);
+                author = detail.author;
+            } catch (e) {
+                console.error('Failed to fetch author:', e);
+            }
+        }
         setSelected({
             id: report.id,
             title: report.title,
             description: report.description,
             address: `${report.address?.street ? `${report.address.street} ${report.address.houseNumber || ''}`.trim() : (report.address?.displayName || 'Brak adresu')} • ${new Date(report.createdAt).toLocaleDateString()}`,
             isFavorite: false,
-            author: report.author,
+            author,
         });
     };
 
     return (
         <Box sx={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
             {/* Pełnoekranowa mapa */}
-            <ReportMap
-                reports={filteredReports}
-                height="100%"
-                onMarkerClick={handleMarkerClick}
+            <ReportMap 
+                reports={filteredReports} 
+                onMarkerClick={handleMarkerClick} 
+                onBoundsChange={handleBoundsChange}
             />
 
             {/* Ikony overlay — lewy górny: X, prawy górny: ?, M, zakładka */}

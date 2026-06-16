@@ -37,10 +37,8 @@ const UserDashboardPage = () => {
             setLoading(true);
             setError(null);
             try {
-                const data = await complaintService.getAll();
-                // Filter to show only the user's reports if the API returns all
-                const userReports = data.filter(r => r.userId === user?.id);
-                setReports(userReports);
+                const data = await complaintService.getUserReports(user?.id, 0, 50);
+                setReports(data.content || []);
             } catch (err) {
                 console.error("Failed to load reports", err);
                 setError('Nie udało się załadować zgłoszeń. Spróbuj ponownie później.');

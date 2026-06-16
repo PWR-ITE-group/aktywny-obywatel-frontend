@@ -30,8 +30,8 @@ const RecentReportsCarousel = () => {
     useEffect(() => {
         const fetchReports = async () => {
             try {
-                const data = await complaintService.getAll();
-                setReports(data);
+                const data = await complaintService.getAll(0, 20);
+                setReports(data.content || []);
             } catch (error) {
                 console.error('Failed to load recent reports:', error);
             } finally {

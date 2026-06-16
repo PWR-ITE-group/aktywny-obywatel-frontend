@@ -3,7 +3,7 @@ import {
     Container, Box, Tabs, Tab, Paper, Stack, Typography, Button, Chip, TextField,
     Table, TableHead, TableBody, TableRow, TableCell, IconButton, Select, MenuItem,
     FormControl, InputLabel, Dialog, DialogTitle, DialogContent, DialogActions,
-    Grid, Card, CardContent, InputAdornment,
+    Grid, Card, CardContent, InputAdornment, TablePagination,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -60,6 +60,9 @@ const ReportsTab = () => {
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [sortOrder, setSortOrder] = useState('desc');
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
+    const [totalElements, setTotalElements] = useState(0);
     const [editDialog, setEditDialog] = useState(null);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -71,10 +74,11 @@ const ReportsTab = () => {
             setError(null);
             try {
                 const filters = {};
-                if (statusFilter) filters.status = statusFilter;
-                if (query) filters.search = query;
-                const response = await adminService.getAllReports(filters);
-                setReports(response);
+                // if (statusFilter) filters.status = statusFilter;
+                // if (query) filters.search = query;
+                const response = await adminService.getAllReports(filters, page, rowsPerPage);
+                setReports(response.content);
+                setTotalElements(response.totalElements);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching reports:', err);
@@ -84,7 +88,16 @@ const ReportsTab = () => {
         };
 
         fetchReports();
-    }, [query, statusFilter]);
+    }, [query, statusFilter, page, rowsPerPage]);
+
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
 
     const filtered = useMemo(() => {
         let result = reports.filter((r) => {
@@ -239,7 +252,7 @@ const ReportsTab = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {filtered.map((r) => (
+                        {reports.map((r) => (
                             <TableRow key={r.id} hover>
                                 <TableCell>{r.id}</TableCell>
                                 <TableCell>{r.title}</TableCell>
@@ -266,6 +279,17 @@ const ReportsTab = () => {
                     </TableBody>
                 </Table>
             </Box>
+            <TablePagination
+                component="div"
+                count={totalElements}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[10, 20, 50]}
+                labelRowsPerPage="Wierszy na stronę:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} z ${count !== -1 ? count : `ponad ${to}`}`}
+            />
 
             <Dialog open={Boolean(editDialog)} onClose={() => setEditDialog(null)} maxWidth="sm" fullWidth>
                 <DialogTitle>Edytuj zgłoszenie #{editDialog?.id}</DialogTitle>
