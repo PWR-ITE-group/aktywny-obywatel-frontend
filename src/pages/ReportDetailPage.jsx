@@ -44,7 +44,8 @@ const buildHistory = (report) => {
         return [...report.history].reverse().map(h => ({
             status: h.newStatus,
             at: new Date(h.createdAt).toLocaleString('pl-PL'),
-            comment: h.comment || (h.source === 'SYSTEM' ? 'Aktualizacja systemowa' : '')
+            comment: h.comment || (h.source === 'SYSTEM' ? 'Aktualizacja systemowa' : ''),
+            source: h.source
         }));
     }
 
@@ -239,9 +240,14 @@ const ReportDetailPage = () => {
                                         <Typography variant="body2" fontWeight={600}>
                                             {STATUS_LABELS[h.status]}
                                         </Typography>
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                                             {h.comment}
                                         </Typography>
+                                        {h.status === 'ARCHIVED' && h.source && h.source.includes('@') && (
+                                            <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                                Jeśli uważasz, że to zgłoszenie zostało zarchiwizowane przez pomyłkę, skontaktuj się z naszym administratorem: {h.source}
+                                            </Typography>
+                                        )}
                                     </TimelineContent>
                                 </TimelineItem>
                             ))}
