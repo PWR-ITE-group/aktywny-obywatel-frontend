@@ -248,12 +248,18 @@ const ReportsTab = () => {
                             onChange={(e) => setEditDialog({ ...editDialog, title: e.target.value })}
                             fullWidth
                         />
-                        <TextField
-                            label="Kategoria"
-                            value={editDialog?.category ?? ''}
-                            onChange={(e) => setEditDialog({ ...editDialog, category: e.target.value })}
-                            fullWidth
-                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Kategoria</InputLabel>
+                            <Select
+                                label="Kategoria"
+                                value={editDialog?.category ?? ''}
+                                onChange={(e) => setEditDialog({ ...editDialog, category: e.target.value })}
+                            >
+                                {CATEGORIES.map(cat => (
+                                    <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                         <TextField
                             label="Opis"
                             value={editDialog?.description ?? ''}
@@ -261,6 +267,8 @@ const ReportsTab = () => {
                             fullWidth
                             multiline
                             rows={3}
+                            error={(editDialog?.description || '').length < 10}
+                            helperText={(editDialog?.description || '').length < 10 ? "Opis musi zawierać co najmniej 10 znaków" : ""}
                         />
                         <FormControl fullWidth>
                             <InputLabel>Status</InputLabel>
@@ -290,6 +298,7 @@ const ReportsTab = () => {
                     <Button onClick={() => setEditDialog(null)}>Anuluj</Button>
                     <Button
                         variant="contained"
+                        disabled={(editDialog?.description || '').length < 10}
                         onClick={async () => {
                             // To actually save to backend, we would call an update endpoint
                             // Here we just do UI state or simulated save
