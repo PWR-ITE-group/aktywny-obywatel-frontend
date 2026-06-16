@@ -20,7 +20,7 @@ const PublicMapPage = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
-    const [visibleStatuses, setVisibleStatuses] = useState(['NOTIFIED']);
+    const [visibleStatuses, setVisibleStatuses] = useState(['ROUTED', 'NOTIFIED']);
     const [filterAnchorEl, setFilterAnchorEl] = useState(null);
     
     const showArchived = visibleStatuses.includes('ARCHIVED');
