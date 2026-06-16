@@ -23,3 +23,30 @@ export const STATUS_CONFIG = {
     RESOLVED:     { label: 'Zakończone',    color: 'success',  muiColor: '#43A047' },
     REJECTED:     { label: 'Odrzucone',     color: 'error',    muiColor: '#E53935' },
 };
+
+export const BACKEND_CATEGORY_TO_LABEL = {
+    road: 'Drogi i ulice',
+    cleaning: 'Sprzątanie i odpady',
+    garbage: 'Odpady',
+    lighting: 'Oświetlenie',
+    greenery: 'Zieleń i parki',
+    water: 'Woda i ścieki',
+    'waste-burning': 'Palenie odpadów',
+    parking: 'Niepoprawne parkowanie',
+    'no-entry': 'Nieprzestrzeganie zakazu wjazdu',
+    'illegal-dumping': 'Nielegalne składowanie odpadów',
+    waterways: 'Wody i rzeki',
+    animals: 'Zwierzęta',
+    'hate-speech': 'Mowa nienawiści',
+    railway: 'Problemy z przejazdami kolejowymi',
+    'power-outage': 'Awaria prądu',
+    other: 'Pozostałe zgłoszenia',
+    // Fallbacks for mock data which might already be in Polish
+    'Drogi i chodniki': 'Drogi i chodniki',
+    'Oświetlenie': 'Oświetlenie',
+    'Zieleń miejska': 'Zieleń miejska',
+    'Odpady': 'Odpady',
+    'Wodociągi i kanalizacja': 'Wodociągi i kanalizacja',
+    'Bezpieczeństwo': 'Bezpieczeństwo',
+    'Inne': 'Inne',
+};

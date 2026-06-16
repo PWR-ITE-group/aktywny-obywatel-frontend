@@ -11,9 +11,18 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import ReplayIcon from '@mui/icons-material/Replay';
-import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS, CATEGORIES } from '../config/mapConfig';
+import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS } from '../config/mapConfig';
+import { BACKEND_CATEGORY_TO_LABEL } from '../config/reportCategories';
 import toast from 'react-hot-toast';
 import { adminService } from '../services/adminService';
+
+const STATUS_OPTIONS = [
+    { value: 'NEW', label: 'Nowe (Przyjęte)' },
+    { value: 'ROUTED', label: 'Przekazane' },
+    { value: 'NOTIFIED', label: 'W realizacji' },
+    { value: 'RESOLVED', label: 'Zakończone' },
+    { value: 'ARCHIVED', label: 'Zarchiwizowano' },
+];
 
 // Panel administratora (WF-18–24).
 // W prototypie operacje są lokalne — docelowo adminService.* z backendu.
@@ -182,8 +191,8 @@ const ReportsTab = () => {
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
                         <MenuItem value="">Wszystkie</MenuItem>
-                        {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                            <MenuItem key={v} value={v}>{l}</MenuItem>
+                        {STATUS_OPTIONS.map((opt) => (
+                            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
@@ -215,7 +224,7 @@ const ReportsTab = () => {
                                 <TableCell>{r.id}</TableCell>
                                 <TableCell>{r.title}</TableCell>
                                 <TableCell>{r.author ? `${r.author.firstName} (${r.author.email})` : 'Anonim'}</TableCell>
-                                <TableCell>{r.category}</TableCell>
+                                <TableCell>{BACKEND_CATEGORY_TO_LABEL[r.category] || r.category}</TableCell>
                                 <TableCell>
                                     <Chip
                                         label={r.statusLabel || r.status}
@@ -255,8 +264,8 @@ const ReportsTab = () => {
                                 value={editDialog?.category ?? ''}
                                 onChange={(e) => setEditDialog({ ...editDialog, category: e.target.value })}
                             >
-                                {CATEGORIES.map(cat => (
-                                    <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                                {Object.entries(BACKEND_CATEGORY_TO_LABEL).map(([key, label]) => (
+                                    <MenuItem key={key} value={key}>{label}</MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
@@ -277,10 +286,9 @@ const ReportsTab = () => {
                                 value={editDialog?.status ?? ''}
                                 onChange={(e) => setEditDialog({ ...editDialog, status: e.target.value })}
                             >
-                                {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                                    <MenuItem key={v} value={v}>{l}</MenuItem>
+                                {STATUS_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                                 ))}
-                                <MenuItem value="ARCHIVED">Zarchiwizowano</MenuItem>
                             </Select>
                         </FormControl>
                         <TextField
