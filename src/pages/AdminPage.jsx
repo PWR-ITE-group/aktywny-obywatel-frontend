@@ -339,7 +339,12 @@ const ReportsTab = () => {
                                     comment: editDialog.comment
                                 });
                                 toast.success('Zaktualizowano zgłoszenie.');
-                                setReports(prev => prev.map(r => r.id === editDialog.id ? { ...r, ...editDialog } : r));
+                                setReports(prev => prev.map(r => r.id === editDialog.id ? { 
+                                    ...r, 
+                                    ...editDialog,
+                                    statusLabel: STATUS_LABELS[editDialog.status] || editDialog.status,
+                                    statusColor: STATUS_COLORS[editDialog.status] || '#9E9E9E'
+                                } : r));
                                 setEditDialog(null);
                             } catch (err) {
                                 toast.error('Nie udało się zapisać zmian.');
