@@ -7,6 +7,7 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import DirectionsSubwayIcon from '@mui/icons-material/DirectionsSubway';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import TuneIcon from '@mui/icons-material/Tune';
+import ArchiveIcon from '@mui/icons-material/Archive';
 
 import ReportMap from '../components/Map/ReportMap';
 import PropertyBottomSheet from '../components/Map/PropertyBottomSheet';
@@ -19,6 +20,7 @@ const PublicMapPage = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
+    const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -36,11 +38,12 @@ const PublicMapPage = () => {
 
     const filteredReports = useMemo(() => {
         return reports.filter((r) => {
+            if (!showArchived && r.status === 'ARCHIVED') return false;
             if (filters.status && r.status !== filters.status) return false;
             if (filters.category && r.category !== filters.category) return false;
             return true;
         });
-    }, [filters, reports]);
+    }, [filters, reports, showArchived]);
 
     // Kliknięcie markera -> otwórz bottom sheet z danymi tego zgłoszenia
     const handleMarkerClick = (report) => {
@@ -117,6 +120,15 @@ const PublicMapPage = () => {
                     zIndex: 1000,
                 }}
             >
+                <Fab
+                    size="medium"
+                    color={showArchived ? "primary" : "default"}
+                    sx={!showArchived ? { bgcolor: 'background.paper', color: 'primary.main' } : {}}
+                    aria-label="Pokaż zarchiwizowane"
+                    onClick={() => setShowArchived(!showArchived)}
+                >
+                    <ArchiveIcon />
+                </Fab>
                 <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Moja lokalizacja">
                     <MyLocationIcon color="primary" />
                 </Fab>
