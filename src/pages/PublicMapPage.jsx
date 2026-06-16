@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, IconButton, Fab, Stack } from '@mui/material';
+import { Box, IconButton, Fab, Stack, Popover, FormGroup, FormControlLabel, Checkbox, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -11,7 +11,7 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 
 import ReportMap from '../components/Map/ReportMap';
 import PropertyBottomSheet from '../components/Map/PropertyBottomSheet';
-import { MOCK_REPORTS } from '../config/mapConfig';
+import { MOCK_REPORTS, STATUS_LABELS, STATUS_COLORS } from '../config/mapConfig';
 import { complaintService } from '../services/complaintService';
 
 const PublicMapPage = () => {
@@ -20,7 +20,10 @@ const PublicMapPage = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
-    const [showArchived, setShowArchived] = useState(false);
+    const [visibleStatuses, setVisibleStatuses] = useState(['NOTIFIED']);
+    const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+    
+    const showArchived = visibleStatuses.includes('ARCHIVED');
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -38,12 +41,12 @@ const PublicMapPage = () => {
 
     const filteredReports = useMemo(() => {
         return reports.filter((r) => {
-            if (!showArchived && r.status === 'ARCHIVED') return false;
+            if (!visibleStatuses.includes(r.status)) return false;
             if (filters.status && r.status !== filters.status) return false;
             if (filters.category && r.category !== filters.category) return false;
             return true;
         });
-    }, [filters, reports, showArchived]);
+    }, [filters, reports, visibleStatuses]);
 
     // Kliknięcie markera -> otwórz bottom sheet z danymi tego zgłoszenia
     const handleMarkerClick = (report) => {
@@ -125,17 +128,70 @@ const PublicMapPage = () => {
                     color={showArchived ? "primary" : "default"}
                     sx={!showArchived ? { bgcolor: 'background.paper', color: 'primary.main' } : {}}
                     aria-label="Pokaż zarchiwizowane"
-                    onClick={() => setShowArchived(!showArchived)}
+                    onClick={() => {
+                        setVisibleStatuses(prev => 
+                            prev.includes('ARCHIVED') 
+                            ? prev.filter(s => s !== 'ARCHIVED') 
+                            : [...prev, 'ARCHIVED']
+                        );
+                    }}
                 >
                     <ArchiveIcon />
                 </Fab>
                 <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Moja lokalizacja">
                     <MyLocationIcon color="primary" />
                 </Fab>
-                <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Filtry">
+                <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Filtry" onClick={(e) => setFilterAnchorEl(e.currentTarget)}>
                     <TuneIcon color="primary" />
                 </Fab>
             </Stack>
+
+            <Popover
+                open={Boolean(filterAnchorEl)}
+                anchorEl={filterAnchorEl}
+                onClose={() => setFilterAnchorEl(null)}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+            >
+                <Box sx={{ p: 2, minWidth: 200 }}>
+                    <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                        Widoczne statusy na mapie
+                    </Typography>
+                    <FormGroup>
+                        {['NEW', 'ROUTED', 'NOTIFIED', 'RESOLVED', 'ARCHIVED'].map((key) => (
+                            <FormControlLabel
+                                key={key}
+                                control={
+                                    <Checkbox 
+                                        size="small"
+                                        checked={visibleStatuses.includes(key)} 
+                                        onChange={() => {
+                                            setVisibleStatuses(prev => 
+                                                prev.includes(key) 
+                                                ? prev.filter(s => s !== key) 
+                                                : [...prev, key]
+                                            );
+                                        }}
+                                        sx={{
+                                            color: STATUS_COLORS[key],
+                                            '&.Mui-checked': {
+                                                color: STATUS_COLORS[key],
+                                            },
+                                        }}
+                                    />
+                                }
+                                label={<Typography variant="body2">{STATUS_LABELS[key]}</Typography>}
+                            />
+                        ))}
+                    </FormGroup>
+                </Box>
+            </Popover>
 
             {/* Bottom sheet z info o obiekcie */}
             <PropertyBottomSheet
