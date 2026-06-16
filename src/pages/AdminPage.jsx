@@ -59,6 +59,7 @@ const AdminPage = () => {
 const ReportsTab = () => {
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [sortOrder, setSortOrder] = useState('desc');
     const [editDialog, setEditDialog] = useState(null);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -86,12 +87,20 @@ const ReportsTab = () => {
     }, [query, statusFilter]);
 
     const filtered = useMemo(() => {
-        return reports.filter((r) => {
+        let result = reports.filter((r) => {
             if (statusFilter && r.status !== statusFilter) return false;
             if (query && !r.title.toLowerCase().includes(query.toLowerCase())) return false;
             return true;
         });
-    }, [reports, query, statusFilter]);
+
+        result.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0).getTime();
+            const dateB = new Date(b.createdAt || 0).getTime();
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+
+        return result;
+    }, [reports, query, statusFilter, sortOrder]);
 
     const exportCSV = async () => {
         try {
@@ -194,6 +203,17 @@ const ReportsTab = () => {
                         {STATUS_OPTIONS.map((opt) => (
                             <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                         ))}
+                    </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <InputLabel>Sortowanie</InputLabel>
+                    <Select
+                        value={sortOrder}
+                        label="Sortowanie"
+                        onChange={(e) => setSortOrder(e.target.value)}
+                    >
+                        <MenuItem value="desc">Od najnowszych</MenuItem>
+                        <MenuItem value="asc">Od najstarszych</MenuItem>
                     </Select>
                 </FormControl>
                 <Button
