@@ -7,7 +7,6 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import DirectionsSubwayIcon from '@mui/icons-material/DirectionsSubway';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import TuneIcon from '@mui/icons-material/Tune';
-import ArchiveIcon from '@mui/icons-material/Archive';
 
 import ReportMap from '../components/Map/ReportMap';
 import PropertyBottomSheet from '../components/Map/PropertyBottomSheet';
@@ -22,8 +21,6 @@ const PublicMapPage = () => {
     const [selected, setSelected] = useState(null);
     const [visibleStatuses, setVisibleStatuses] = useState(['ROUTED', 'NOTIFIED']);
     const [filterAnchorEl, setFilterAnchorEl] = useState(null);
-    
-    const showArchived = visibleStatuses.includes('ARCHIVED');
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -123,21 +120,6 @@ const PublicMapPage = () => {
                     zIndex: 1000,
                 }}
             >
-                <Fab
-                    size="medium"
-                    color={showArchived ? "primary" : "default"}
-                    sx={!showArchived ? { bgcolor: 'background.paper', color: 'primary.main' } : {}}
-                    aria-label="Pokaż zarchiwizowane"
-                    onClick={() => {
-                        setVisibleStatuses(prev => 
-                            prev.includes('ARCHIVED') 
-                            ? prev.filter(s => s !== 'ARCHIVED') 
-                            : [...prev, 'ARCHIVED']
-                        );
-                    }}
-                >
-                    <ArchiveIcon />
-                </Fab>
                 <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Moja lokalizacja">
                     <MyLocationIcon color="primary" />
                 </Fab>
