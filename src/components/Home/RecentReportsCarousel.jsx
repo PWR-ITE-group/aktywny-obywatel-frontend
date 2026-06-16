@@ -5,6 +5,7 @@ import {
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import ArchiveIcon from '@mui/icons-material/Archive';
 import { useMemo, useState, useEffect } from 'react';
 import { STATUS_COLORS, STATUS_LABELS } from '../../config/mapConfig';
 import { complaintService } from '../../services/complaintService';
@@ -20,6 +21,7 @@ const RecentReportsCarousel = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState(() => sessionStorage.getItem('homeTab') || 'recent');
+    const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
         sessionStorage.setItem('homeTab', tab);
@@ -39,7 +41,10 @@ const RecentReportsCarousel = () => {
         fetchReports();
     }, []);
 
-    const items = useMemo(() => tab === 'recent' ? buildRecent(reports) : buildPopular(reports), [reports, tab]);
+    const items = useMemo(() => {
+        const filtered = showArchived ? reports : reports.filter(r => r.status !== 'ARCHIVED');
+        return tab === 'recent' ? buildRecent(filtered) : buildPopular(filtered);
+    }, [reports, tab, showArchived]);
 
     const openOnMap = (report) => {
         navigate(`/zgloszenie/${report.id}`);
@@ -51,9 +56,23 @@ const RecentReportsCarousel = () => {
                 <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
                     Zgłoszenia w okolicy
                 </Typography>
-                <Box sx={{ 
-                    display: 'flex',
-                    position: 'relative',
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <IconButton 
+                        size="small" 
+                        onClick={() => setShowArchived(!showArchived)}
+                        sx={{ 
+                            bgcolor: showArchived ? 'primary.main' : 'rgba(240, 240, 245, 0.95)',
+                            color: showArchived ? 'white' : 'primary.main',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            '&:hover': { bgcolor: showArchived ? 'primary.dark' : 'rgba(255, 255, 255, 0.95)' }
+                        }}
+                        title="Pokaż/ukryj zarchiwizowane"
+                    >
+                        <ArchiveIcon fontSize="small" />
+                    </IconButton>
+                    <Box sx={{ 
+                        display: 'flex',
+                        position: 'relative',
                     bgcolor: 'rgba(240, 240, 245, 0.95)', 
                     borderRadius: 999, 
                     p: 0.5,
@@ -105,6 +124,7 @@ const RecentReportsCarousel = () => {
                     >
                         Popularne
                     </Typography>
+                </Box>
                 </Box>
             </Box>
 
