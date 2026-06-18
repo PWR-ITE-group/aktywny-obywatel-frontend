@@ -5,6 +5,7 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { STATUS_COLORS, STATUS_LABELS } from '../../config/mapConfig';
 import { useNavigate } from 'react-router-dom';
+import { BACKEND_CATEGORY_TO_LABEL } from '../../config/reportCategories';
 
 // Ikona + kolor wiodący dla statusu (jak zielony check "Problem naprawiony" na screenie 5).
 const statusMeta = (status) => {
@@ -12,7 +13,7 @@ const statusMeta = (status) => {
         case 'RESOLVED':
         case 'zakończone':   return { icon: <CheckCircleIcon fontSize="small" />, label: 'Problem naprawiony', color: 'success.main' };
         case 'ROUTED':
-        case 'NOTIFIED':
+        case 'IN_PROGRESS':
         case 'w realizacji': return { icon: <HourglassEmptyIcon fontSize="small" />, label: 'W realizacji',     color: 'info.main' };
         case 'NEW':
         case 'przyjęte':     return { icon: <AccessTimeIcon fontSize="small" />,    label: 'Przyjęte',          color: 'warning.main' };
@@ -69,7 +70,7 @@ const ReportStatusCard = ({ report }) => {
 
                 {/* Kategoria + lokalizacja */}
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
-                    <Chip label={report.category} size="small" variant="outlined" />
+                    <Chip label={BACKEND_CATEGORY_TO_LABEL[report.category] ?? report.category} size="small" variant="outlined" />
                     {(report.address?.displayName || report.location) && (
                         <Chip
                             label={report.address?.displayName || report.location}

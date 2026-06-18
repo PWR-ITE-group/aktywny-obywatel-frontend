@@ -69,13 +69,9 @@ const NewReportPage = () => {
         try {
             const osm = formData.addressDetails;
 
-            // 1. Mapowanie kategorii pod sztywny słownik Michała (liczba pojedyncza)
-            let backendCategory = formData.categoryId;
-            if (backendCategory === 'roads') backendCategory = 'road';
-            if (backendCategory === 'cleaning') backendCategory = 'cleaning'; // lub 'waste' zależnie od ustaleń z Michałem
-
-            // Jeśli z jakiegoś powodu pole jest puste, dajemy bezpieczny fallback, by nie naruszyć @NotBlank
-            if (!backendCategory) backendCategory = 'other';
+            // Kategoria idzie do backendu bez zmian - klucze kategorii i reguł routingu
+            // są spójne (np. 'roads' = 'roads'). Fallback tylko gdy pole puste.
+            let backendCategory = formData.categoryId || 'other';
 
             // 2. Upewniamy się, że ID użytkownika to czysta liczba (Long), usuwając ryzyko przekazania stringa
             const rawUserId = user?.id ? Number(user.id) : 1;

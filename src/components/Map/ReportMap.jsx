@@ -5,6 +5,7 @@ import debounce from 'lodash.debounce';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { WROCLAW_CENTER, DEFAULT_ZOOM, STATUS_COLORS, STATUS_LABELS } from '../../config/mapConfig';
+import { BACKEND_CATEGORY_TO_LABEL } from '../../config/reportCategories';
 import { createColoredIcon } from '../../utils/leafletIcons';
 
 const MapResizer = () => {
@@ -117,7 +118,7 @@ const ReportMap = ({ reports = [], height = '100%', onMarkerClick, onBoundsChang
                     >
                         <Tooltip direction="top" offset={[0, -10]} opacity={1} className="custom-tooltip">
                             <div className="tooltip-inner">
-                                <span style={{ color: '#5B5FED', fontWeight: 700, fontSize: 13 }}>{report.category}</span>
+                                <span style={{ color: '#5B5FED', fontWeight: 700, fontSize: 13 }}>{BACKEND_CATEGORY_TO_LABEL[report.category] ?? report.category}</span>
                                 <span style={{ color: '#bbb', margin: '0 6px' }}>•</span>
                                 <span style={{ color: '#555', fontSize: 12 }}>{report.title}</span>
                             </div>

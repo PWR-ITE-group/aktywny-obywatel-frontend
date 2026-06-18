@@ -118,6 +118,11 @@ export const adminService = {
     return data;
   },
 
+  async generateDepartmentApiKey(id) {
+    const { data } = await api.post(`/api/admin/departments/${id}/api-key`);
+    return data;
+  },
+
   // Statistics
   async getStats() {
     if (useMock()) {

@@ -22,7 +22,7 @@ const PublicMapPage = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
-    const [visibleStatuses, setVisibleStatuses] = useState(['ROUTED', 'NOTIFIED']);
+    const [visibleStatuses, setVisibleStatuses] = useState(['NEW', 'ROUTED', 'IN_PROGRESS']);
     const [filterAnchorEl, setFilterAnchorEl] = useState(null);
 
     const handleBoundsChange = useCallback(async (bounds) => {
@@ -157,7 +157,7 @@ const PublicMapPage = () => {
                         Widoczne statusy na mapie
                     </Typography>
                     <FormGroup>
-                        {['NEW', 'ROUTED', 'NOTIFIED', 'RESOLVED', 'ARCHIVED'].map((key) => (
+                        {['NEW', 'ROUTED', 'IN_PROGRESS', 'RESOLVED', 'ARCHIVED'].map((key) => (
                             <FormControlLabel
                                 key={key}
                                 control={

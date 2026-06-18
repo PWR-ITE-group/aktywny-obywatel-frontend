@@ -102,9 +102,11 @@ const StepCategory = ({ value, onChange, onCategoryChange }) => {
     const handleTopicSelect = (topic, categoryId) => {
         onChange(topic);
         if (onCategoryChange) {
-            // Szukamy etykiety w naszym pliku reportCategories
+            // Etykietę bierzemy z danych pobranych z backendu (topicGroups),
+            // a dopiero w razie braku z lokalnej listy CATEGORIES.
+            const backendCat = topicGroups.find(c => c.id === categoryId);
             const localCat = CATEGORIES.find(c => c.id === categoryId);
-            const categoryLabel = localCat ? localCat.label : 'Pozostałe zgłoszenia';
+            const categoryLabel = backendCat?.label || localCat?.label || 'Pozostałe zgłoszenia';
 
             onCategoryChange(categoryId, categoryLabel); // Przekazujemy ID i Label wyżej!
         }
@@ -239,12 +241,9 @@ const StepCategory = ({ value, onChange, onCategoryChange }) => {
             {tab === 1 && (
                 <List disablePadding>
                     {popular.map((topic) => {
-                        // Szukamy powiązania tematu z ID kategorii
-                        let detectedId = 'other';
-                        if (topic.includes('drogi') || topic.includes('chodniku') || topic.includes('przystanku')) detectedId = 'roads';
-                        if (topic.includes('kosze') || topic.includes('śmieci')) detectedId = 'cleaning';
-                        if (topic.includes('parkowanie')) detectedId = 'parking';
-                        if (topic.includes('oświetleniem')) detectedId = 'power-outage'; // pasuje do awarii prądu / oświetlenia
+                        // Znajdujemy prawdziwą kategorię tematu w danych z backendu
+                        const owner = topicGroups.find((g) => g.topics?.includes(topic));
+                        const detectedId = owner?.id || 'other';
 
                         return (
                             <ListItemButton

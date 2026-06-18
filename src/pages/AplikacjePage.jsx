@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { Box, Typography, CircularProgress, Container } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { complaintService } from '../services/complaintService';
+import { BACKEND_CATEGORY_TO_LABEL } from '../config/reportCategories';
 
 const AplikacjePage = () => {
   const { user } = useAuth();
@@ -78,7 +79,7 @@ const AplikacjePage = () => {
                 {report.title}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Kategoria: {report.category} | Status: {report.status}
+                Kategoria: {BACKEND_CATEGORY_TO_LABEL[report.category] ?? report.category} | Status: {report.status}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 Zgłoszono: {report.createdAt}

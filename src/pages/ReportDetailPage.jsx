@@ -23,6 +23,7 @@ import { createColoredIcon } from '../utils/leafletIcons';
 import { complaintService } from '../services/complaintService';
 import { adminService } from '../services/adminService';
 import { useAuth } from '../context/AuthContext';
+import { BACKEND_CATEGORY_TO_LABEL } from '../config/reportCategories';
 
 // WF-16: pełna historia zgłoszenia. WF-04 dla gościa — bez danych zgłaszającego.
 
@@ -33,7 +34,7 @@ const statusIcon = (status) => {
     switch (status) {
         case 'RESOLVED':   return <CheckCircleIcon />;
         case 'ROUTED':
-        case 'NOTIFIED':   return <HourglassEmptyIcon />;
+        case 'IN_PROGRESS': return <HourglassEmptyIcon />;
         case 'ARCHIVED':   return <CancelIcon />;
         case 'NEW':        return <SendIcon />;
         default:           return <AccessTimeIcon />;
@@ -146,7 +147,7 @@ const ReportDetailPage = () => {
                 <Stack spacing={2}>
                     <Paper sx={{ p: 2.5 }}>
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }} flexWrap="wrap">
-                            <Chip label={report.category} size="small" />
+                            <Chip label={BACKEND_CATEGORY_TO_LABEL[report.category] ?? report.category} size="small" />
                             <Chip
                                 label={STATUS_LABELS[report.status]}
                                 size="small"

@@ -25,6 +25,8 @@ export const STATUS_CONFIG = {
 };
 
 export const BACKEND_CATEGORY_TO_LABEL = {
+    roads: 'Drogi i ulice',
+    transport: 'Komunikacja miejska',
     road: 'Drogi i ulice',
     cleaning: 'Sprzątanie i odpady',
     garbage: 'Odpady',

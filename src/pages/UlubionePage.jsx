@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { MOCK_REPORTS } from '../config/mapConfig';
+import { BACKEND_CATEGORY_TO_LABEL } from '../config/reportCategories';
 
 const UlubionePage = () => {
   const { user } = useAuth();
@@ -108,7 +109,7 @@ const UlubionePage = () => {
                       {report.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Kategoria: {report.category} | Status: {report.status}
+                      Kategoria: {BACKEND_CATEGORY_TO_LABEL[report.category] ?? report.category} | Status: {report.status}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       Zgłoszono: {report.createdAt}

@@ -11,17 +11,18 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import ReplayIcon from '@mui/icons-material/Replay';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS } from '../config/mapConfig';
 import { BACKEND_CATEGORY_TO_LABEL } from '../config/reportCategories';
 import toast from 'react-hot-toast';
 import { adminService } from '../services/adminService';
 
 const STATUS_OPTIONS = [
-    { value: 'NEW', label: 'Nowe (Przyjęte)' },
+    { value: 'NEW', label: 'Zgłoszone' },
     { value: 'ROUTED', label: 'Przekazane' },
-    { value: 'NOTIFIED', label: 'W realizacji' },
-    { value: 'RESOLVED', label: 'Zakończone' },
-    { value: 'ARCHIVED', label: 'Zarchiwizowano' },
+    { value: 'IN_PROGRESS', label: 'W realizacji' },
+    { value: 'RESOLVED', label: 'Rozwiązane' },
+    { value: 'ARCHIVED', label: 'Zarchiwizowane' },
 ];
 
 // Panel administratora (WF-18–24).
@@ -386,25 +387,30 @@ const ReportsTab = () => {
 // --- Tab: Routing (WF-18) ---
 const RoutingTab = () => {
     const [routing, setRouting] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchRouting = async () => {
+        const fetchData = async () => {
             setLoading(true);
             setError(null);
             try {
-                const response = await adminService.getRoutingRules();
-                setRouting(response);
+                const [rules, depts] = await Promise.all([
+                    adminService.getRoutingRules(),
+                    adminService.getDepartments(),
+                ]);
+                setRouting(rules);
+                setDepartments(depts);
             } catch (err) {
                 setError(err.message);
-                console.error('Error fetching routing rules:', err);
+                console.error('Error fetching routing config:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchRouting();
+        fetchData();
     }, []);
 
     const saveRouting = async () => {
@@ -460,19 +466,28 @@ const RoutingTab = () => {
                 <TableBody>
                     {routing.map((row, idx) => (
                         <TableRow key={row.category}>
-                            <TableCell>{row.category}</TableCell>
+                            <TableCell>{BACKEND_CATEGORY_TO_LABEL[row.category] || row.category}</TableCell>
                             <TableCell>
-                                <TextField
+                                <Select
                                     size="small"
                                     fullWidth
-                                    placeholder="np. ZDiUM"
-                                    value={row.department}
+                                    displayEmpty
+                                    value={row.department || ''}
                                     onChange={(e) => {
                                         const next = [...routing];
                                         next[idx] = { ...row, department: e.target.value };
                                         setRouting(next);
                                     }}
-                                />
+                                >
+                                    <MenuItem value="">
+                                        <em>— brak przypisania —</em>
+                                    </MenuItem>
+                                    {departments.map((d) => (
+                                        <MenuItem key={d.id} value={d.name}>
+                                            {d.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
                             </TableCell>
                             <TableCell>
                                 <Select
@@ -561,6 +576,27 @@ const DepartmentsTab = () => {
         }
     };
 
+    const generateKey = async (d) => {
+        const ok = window.confirm(
+            `Wygenerować nowy klucz API dla "${d.name}"?\n\n` +
+            `UWAGA: dotychczasowy klucz tego wydziału natychmiast przestanie działać. ` +
+            `Nowy klucz zobaczysz tylko raz i trzeba go wpisać w systemie urzędu.`
+        );
+        if (!ok) return;
+        try {
+            const res = await adminService.generateDepartmentApiKey(d.id);
+            // Pokazujemy klucz w prompt, żeby dało się go skopiować (widoczny tylko teraz)
+            window.prompt(
+                'Nowy klucz API — skopiuj go teraz, nie będzie można go ponownie wyświetlić:',
+                res.apiKey
+            );
+            toast.success('Wygenerowano nowy klucz API. Stary przestał działać.');
+        } catch (err) {
+            toast.error('Nie udało się wygenerować klucza.');
+            console.error('Error generating API key:', err);
+        }
+    };
+
     if (loading) {
         return (
             <Paper sx={{ p: 2 }}>
@@ -618,6 +654,9 @@ const DepartmentsTab = () => {
                                 {d.apiUrl || <i style={{ color: '#9CA3AF' }}>brak — użyje email</i>}
                             </TableCell>
                             <TableCell align="right">
+                                <IconButton size="small" title="Generuj klucz API" onClick={() => generateKey(d)}>
+                                    <VpnKeyIcon fontSize="small" />
+                                </IconButton>
                                 <IconButton size="small" onClick={() => {
                                     setDialog({ id: d.id, name: d.name, email: d.email, apiUrl: d.apiUrl });
                                 }}>

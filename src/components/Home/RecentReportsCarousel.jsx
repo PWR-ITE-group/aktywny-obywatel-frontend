@@ -9,6 +9,7 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 import { useMemo, useState, useEffect } from 'react';
 import { STATUS_COLORS, STATUS_LABELS } from '../../config/mapConfig';
 import { complaintService } from '../../services/complaintService';
+import { BACKEND_CATEGORY_TO_LABEL } from '../../config/reportCategories';
 
 const buildRecent = (reports) =>
     [...reports].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 8);
@@ -195,7 +196,7 @@ const RecentReportsCarousel = () => {
                                             }}
                                         />
                                         <Typography variant="caption" color="text.secondary" noWrap>
-                                            {r.category}
+                                            {BACKEND_CATEGORY_TO_LABEL[r.category] ?? r.category}
                                         </Typography>
                                     </Stack>
                                     <Box sx={{ minWidth: 0, flex: 1 }}>

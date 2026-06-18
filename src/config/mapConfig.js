@@ -4,29 +4,19 @@ export const DEFAULT_ZOOM = 13;
 
 // Kolory markerów według statusu zgłoszenia
 export const STATUS_COLORS = {
-    złożone: '#1565C0',
-    przyjęte: '#F57F17',
-    'w realizacji': '#00897B',
-    zakończone: '#2E7D32',
-    odrzucone: '#C62828',
-    NEW: '#F57F17',
-    ROUTED: '#00897B',
-    NOTIFIED: '#00897B',
-    RESOLVED: '#2E7D32',
-    ARCHIVED: '#757575',
+    NEW: '#1565C0',          // Zgłoszone - niebieski
+    ROUTED: '#F57F17',       // Przekazane - pomarańczowy
+    IN_PROGRESS: '#00897B',  // W realizacji - morski
+    RESOLVED: '#2E7D32',     // Rozwiązane - zielony
+    ARCHIVED: '#757575',     // Zarchiwizowane - szary
 };
 
 export const STATUS_LABELS = {
-    złożone: 'Złożone',
-    przyjęte: 'Przyjęte',
-    'w realizacji': 'W realizacji',
-    zakończone: 'Zakończone',
-    odrzucone: 'Odrzucone',
-    NEW: 'Przyjęte',
+    NEW: 'Zgłoszone',
     ROUTED: 'Przekazane',
-    NOTIFIED: 'W realizacji',
-    RESOLVED: 'Zakończone',
-    ARCHIVED: 'Zarchiwizowano',
+    IN_PROGRESS: 'W realizacji',
+    RESOLVED: 'Rozwiązane',
+    ARCHIVED: 'Zarchiwizowane',
 };
 
 export const CATEGORIES = [
