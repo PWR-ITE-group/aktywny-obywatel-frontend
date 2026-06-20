@@ -42,6 +42,7 @@ export const AuthProvider = ({ children }) => {
                         });
                     } else {
                         const tokenData = parseJwt(savedToken);
+                        console.log('Token data:', tokenData);
                         setUser({
                             id: 1, // Fallback ID
                             email: tokenData?.sub || 'user@example.com',

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import { Toaster } from 'react-hot-toast';
 import VerificationPage from './pages/VerificationPage';
+import UserProfilePage from './pages/UserProfilePage';
 import theme from './theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -75,6 +76,7 @@ const App = () => {
                                 <Route path="/dashboard" element={<UserDashboardPage />} />
                                 <Route path="/nowe-zgloszenie" element={<NewReportPage />} />
                                 <Route path="/ustawienia" element={<ProfileSettingsPage />} />
+                                <Route path="/profil" element={<UserProfilePage />} />
                             </Route>
 
                             {/* admin */}

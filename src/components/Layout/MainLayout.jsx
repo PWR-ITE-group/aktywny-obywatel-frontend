@@ -3,9 +3,12 @@ import { Box } from '@mui/material';
 import Navbar from './Navbar';
 import BottomNav from './BottomNav';
 import TranslateWidget from '../TranslateWidget';
+import backgroundImg from '../../assets/luk_wro-centennial-hall.jpg';
 
 // Trasy, na których ukrywamy górny pasek (pełnoekranowa mapa itp.)
 const HIDE_NAVBAR_ROUTES = ['/mapa'];
+
+// Metadata: background image source: https://pixabay.com/photos/centennial-hall-wroclaw-poland-4496672/
 
 const MainLayout = () => {
     const { pathname } = useLocation();
@@ -17,7 +20,10 @@ const MainLayout = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 minHeight: '100vh',
-                bgcolor: 'background.default',
+                //backgroundImage: `url(${backgroundImg})`,
+                //backgroundSize: 'cover',
+                //backgroundPosition: 'center',
+                //backgroundRepeat: 'no-repeat',
             }}
         >
             {!hideNavbar && <Navbar />}
