@@ -46,7 +46,9 @@ const LoginPage = () => {
             }
         } catch (err) {
             console.log(err);
-            const msg = err.response?.data?.message || err.message || 'Błąd logowania';
+            const msg = err.response?.data?.error
+                || err.response?.data?.message
+                || 'Nieprawidłowy email lub hasło';
             setError(msg);
         } finally {
             setLoading(false);

@@ -15,9 +15,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        const originalRequestUrl = error.config?.url;
+        const originalRequestUrl = error.config?.url || '';
         const isMockToken = localStorage.getItem('token') === 'mock.jwt.token';
-        if (error.response?.status === 401 && !originalRequestUrl.includes('/login') && !isMockToken) {
+        // Nie przekierowujemy dla żądań autoryzacji (logowanie/rejestracja) - błąd
+        // ma pokazać formularz. Redirect tylko gdy token wygasł na chronionym zasobie.
+        const isAuthRequest = originalRequestUrl.includes('/api/auth/');
+        if (error.response?.status === 401 && !isAuthRequest && !isMockToken) {
             localStorage.removeItem('token');
             window.location.href = '/logowanie';
         }
