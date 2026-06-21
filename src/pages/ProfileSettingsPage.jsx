@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { emailSchema, passwordSchema } from '../utils/reportSchemas';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
+import { formatName } from '../utils/formatters';
 
 // WF-13: wybór kanałów powiadomień. WF-14: edycja danych konta.
 // WF-17: żądanie usunięcia konta (dane usuwane po zamknięciu zgłoszeń).
@@ -111,13 +112,13 @@ const AccountDataTab = ({ user }) => {
                         <TextField
                             label="Imię"
                             value={form.firstName}
-                            onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                            onChange={(e) => setForm({ ...form, firstName: formatName(e.target.value) })}
                             fullWidth
                         />
                         <TextField
                             label="Nazwisko"
                             value={form.lastName}
-                            onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                            onChange={(e) => setForm({ ...form, lastName: formatName(e.target.value) })}
                             fullWidth
                         />
                     </Stack>
