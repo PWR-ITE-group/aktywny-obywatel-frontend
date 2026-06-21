@@ -18,7 +18,9 @@ const MapResizer = () => {
 
 const BoundingBoxListener = ({ onBoundsChange }) => {
     const callbackRef = useRef(onBoundsChange);
-    callbackRef.current = onBoundsChange;
+    useEffect(() => {
+        callbackRef.current = onBoundsChange;
+    }, [onBoundsChange]);
 
     const map = useMapEvents({
         moveend: () => {
@@ -41,7 +43,6 @@ const BoundingBoxListener = ({ onBoundsChange }) => {
             minLng: bounds.getSouthWest().lng,
             maxLng: bounds.getNorthEast().lng,
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [map]);
 
     return null;

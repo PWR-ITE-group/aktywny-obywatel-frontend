@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, IconButton, Fab, Stack, Popover, FormGroup, FormControlLabel, Checkbox, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -20,6 +20,7 @@ const PublicMapPage = () => {
     const navigate = useNavigate();
     const [filters] = useState({ status: '', category: '' });
     const [reports, setReports] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
     const [visibleStatuses, setVisibleStatuses] = useState(['NEW', 'ROUTED', 'IN_PROGRESS']);

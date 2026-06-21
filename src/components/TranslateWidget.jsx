@@ -16,6 +16,7 @@ const TranslateWidget = () => {
                 window.location.reload();
             }
             // Ukrywamy wyłącznie czarny boks wizualny, ale pozwalamy skryptowi poniżej się załadować!
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setShouldRender(false);
         }
 

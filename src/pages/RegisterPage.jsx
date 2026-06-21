@@ -16,7 +16,7 @@ const RegisterPage = () => {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
-    const { login, register } = useAuth();
+    const { register } = useAuth();
     const navigate = useNavigate();
 
     const validate = () => {

@@ -16,6 +16,7 @@ const TematyPage = () => {
       const cat = report.category;
       stats[cat] = (stats[cat] || 0) + 1;
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCategoryStats(stats);
   }, [user]);
 

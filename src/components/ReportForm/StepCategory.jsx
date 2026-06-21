@@ -12,6 +12,41 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { complaintService } from '../../services/complaintService';
 import { CATEGORIES } from '../../config/reportCategories'; // Upewnij się, że ścieżka do pliku jest poprawna/ Upewnij się, że ścieżka jest poprawna
 
+// Funkcja pomocnicza, która przerabia Twoje płaskie CATEGORIES na grupy z tematami
+function fallbackToLocalCategories() {
+    return CATEGORIES.map(cat => {
+        // Generujemy przykładowe tematy na podstawie ID, żeby użytkownik miał w co kliknąć
+        let topics = [`Inne zgłoszenie w kategorii: ${cat.label}`];
+
+        if (cat.id === 'roads') {
+            topics = [
+                'Dziury w drodze, jezdni lub chodniku miejskim',
+                'Uszkodzona ławka na przystanku',
+                'Niedziałająca sygnalizacja świetlna'
+            ];
+        } else if (cat.id === 'cleaning') {
+            topics = [
+                'Zniszczone lub przepełnione kosze na śmieci',
+                'Nielegalne wysypisko śmieci',
+                'Bałagan na przystanku lub skwerze'
+            ];
+        } else if (cat.id === 'parking') {
+            topics = [
+                'Porzucony pojazd (wrak)',
+                'Niepoprawne parkowanie (zastawianie chodników, parkowanie przy przejściach/skrzyżowaniach)',
+                'Parkowanie na zieleni miejskiej'
+            ];
+        }
+
+        return {
+            id: cat.id,
+            label: cat.label,
+            color: cat.color,
+            topics: topics
+        };
+    });
+}
+
 const POPULAR_TOPICS = [
     'Dziury w drodze, jezdni lub chodniku miejskim',
     'Zniszczone lub przepełnione kosze na śmieci',
@@ -147,39 +182,6 @@ const StepCategory = ({ value, onChange, onCategoryChange }) => {
 
         return () => { isMounted = false; };
     }, []);
-
-// Funkcja pomocnicza, która przerabia Twoje płaskie CATEGORIES na grupy z tematami
-    const fallbackToLocalCategories = () => {
-        return CATEGORIES.map(cat => {
-            // Generujemy przykładowe tematy na podstawie ID, żeby użytkownik miał w co kliknąć
-            let topics = [`Inne zgłoszenie w kategorii: ${cat.label}`];
-
-            if (cat.id === 'roads') {
-                topics = [
-                    'Dziury w drodze, jezdni lub chodniku miejskim',
-                    'Uszkodzona ławka na przystanku',
-                    'Niedziałająca sygnalizacja świetlna'
-                ];
-            } else if (cat.id === 'cleaning') {
-                topics = [
-                    'Zniszczone lub przepełnione kosze na śmieci',
-                    'Dzikie wysypisko odpadów'
-                ];
-            } else if (cat.id === 'parking') {
-                topics = [
-                    'Niepoprawne parkowanie (zastawianie chodników, parkowanie przy przejściach/skrzyżowaniach)',
-                    'Parkowanie na zieleni miejskiej'
-                ];
-            }
-
-            return {
-                id: cat.id,
-                label: cat.label,
-                color: cat.color,
-                topics: topics
-            };
-        });
-    };
 
     const toggleGroup = (id) => {
         setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));

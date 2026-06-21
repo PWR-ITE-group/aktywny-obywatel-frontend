@@ -75,6 +75,7 @@ const NewReportPage = () => {
             let backendCategory = formData.categoryId || 'other';
 
             // 2. Upewniamy się, że ID użytkownika to czysta liczba (Long), usuwając ryzyko przekazania stringa
+            // eslint-disable-next-line no-unused-vars
             const rawUserId = user?.id ? Number(user.id) : 1;
 
             // 3. Budujemy payload kropka w kropkę pod ComplaintRequestDto oraz AddressDto

@@ -123,7 +123,7 @@ const ReportsTab = () => {
         }
     };
 
-    const updateComplaint = async (id, updatedData) => {
+    const _updateComplaint = async (id, updatedData) => {
         try {
             // We can check if it's just a status change or full update
             // But since adminService.updateReportStatus uses /status, we might need a generic update
@@ -134,7 +134,7 @@ const ReportsTab = () => {
             // This is just UI state update
             setReports(prev => prev.map(r => r.id === id ? { ...r, ...updatedData } : r));
             setEditDialog(null);
-        } catch (err) {
+        } catch {
             toast.error('Nie udało się zaktualizować zgłoszenia.');
         }
     };
@@ -145,7 +145,7 @@ const ReportsTab = () => {
             await adminService.deleteReport(id);
             toast.success('Zgłoszenie zostało usunięte.');
             setReports(prev => prev.filter(r => r.id !== id));
-        } catch (err) {
+        } catch {
             toast.error('Nie udało się usunąć zgłoszenia.');
         }
     };
@@ -361,7 +361,7 @@ const ReportsTab = () => {
                                     statusColor: STATUS_COLORS[editDialog.status] || '#9E9E9E'
                                 } : r));
                                 setEditDialog(null);
-                            } catch (err) {
+                            } catch {
                                 toast.error('Nie udało się zapisać zmian.');
                             }
                         }}

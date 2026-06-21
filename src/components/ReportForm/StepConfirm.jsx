@@ -12,6 +12,7 @@ const StepConfirm = ({ formData }) => {
 
     useEffect(() => {
         if (!photos || photos.length === 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setPreviews([]);
             return;
         }

@@ -28,6 +28,7 @@ const PropertyBottomSheet = ({
                 .then(att => setAttachments(att || []))
                 .catch(() => setAttachments([]));
         } else {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setAttachments([]);
         }
     }, [open, property?.id]);
