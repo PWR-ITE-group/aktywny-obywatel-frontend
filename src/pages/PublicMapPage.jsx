@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, IconButton, Fab, Stack } from '@mui/material';
+import { Box, IconButton, Fab, Stack, Popover, FormGroup, FormControlLabel, Checkbox, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -10,47 +10,70 @@ import TuneIcon from '@mui/icons-material/Tune';
 
 import ReportMap from '../components/Map/ReportMap';
 import PropertyBottomSheet from '../components/Map/PropertyBottomSheet';
-import { MOCK_REPORTS } from '../config/mapConfig';
+import { MOCK_REPORTS, STATUS_LABELS, STATUS_COLORS } from '../config/mapConfig';
+import { complaintService } from '../services/complaintService';
+import { adminService } from '../services/adminService';
+import { useAuth } from '../context/AuthContext';
 
 const PublicMapPage = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [filters] = useState({ status: '', category: '' });
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null);
+    const [visibleStatuses, setVisibleStatuses] = useState(['NEW', 'ROUTED', 'IN_PROGRESS']);
+    const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+
+    const handleBoundsChange = useCallback(async (bounds) => {
+        setLoading(true);
+        try {
+            const data = await complaintService.getMapReports(bounds);
+            setReports(data);
+        } catch (error) {
+            console.error('Failed to load reports for map:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     const filteredReports = useMemo(() => {
-        return MOCK_REPORTS.filter((r) => {
+        return reports.filter((r) => {
+            if (!visibleStatuses.includes(r.status)) return false;
             if (filters.status && r.status !== filters.status) return false;
             if (filters.category && r.category !== filters.category) return false;
             return true;
         });
-    }, [filters]);
+    }, [filters, reports, visibleStatuses]);
 
     // Kliknięcie markera -> otwórz bottom sheet z danymi tego zgłoszenia
-    const handleMarkerClick = (report) => {
+    const handleMarkerClick = async (report) => {
+        let author = null;
+        if (user?.isAdmin) {
+            try {
+                const detail = await adminService.getReportById(report.id);
+                author = detail.author;
+            } catch (e) {
+                console.error('Failed to fetch author:', e);
+            }
+        }
         setSelected({
             id: report.id,
             title: report.title,
-            address: `${report.category} • ${report.createdAt}`,
+            description: report.description,
+            address: `${report.address?.street ? `${report.address.street} ${report.address.houseNumber || ''}`.trim() : (report.address?.displayName || 'Brak adresu')} • ${new Date(report.createdAt).toLocaleDateString()}`,
             isFavorite: false,
-            nearby: filteredReports
-                .filter((r) => r.id !== report.id)
-                .slice(0, 3)
-                .map((r) => ({
-                    id: r.id,
-                    title: r.title,
-                    subtitle: r.description,
-                    distance: '~120 m',
-                })),
+            author,
         });
     };
 
     return (
         <Box sx={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
             {/* Pełnoekranowa mapa */}
-            <ReportMap
-                reports={filteredReports}
-                height="100%"
-                onMarkerClick={handleMarkerClick}
+            <ReportMap 
+                reports={filteredReports} 
+                onMarkerClick={handleMarkerClick} 
+                onBoundsChange={handleBoundsChange}
             />
 
             {/* Ikony overlay — lewy górny: X, prawy górny: ?, M, zakładka */}
@@ -111,10 +134,57 @@ const PublicMapPage = () => {
                 <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Moja lokalizacja">
                     <MyLocationIcon color="primary" />
                 </Fab>
-                <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Filtry">
+                <Fab size="medium" sx={{ bgcolor: 'background.paper' }} aria-label="Filtry" onClick={(e) => setFilterAnchorEl(e.currentTarget)}>
                     <TuneIcon color="primary" />
                 </Fab>
             </Stack>
+
+            <Popover
+                open={Boolean(filterAnchorEl)}
+                anchorEl={filterAnchorEl}
+                onClose={() => setFilterAnchorEl(null)}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+            >
+                <Box sx={{ p: 2, minWidth: 200 }}>
+                    <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                        Widoczne statusy na mapie
+                    </Typography>
+                    <FormGroup>
+                        {['NEW', 'ROUTED', 'IN_PROGRESS', 'RESOLVED', 'ARCHIVED'].map((key) => (
+                            <FormControlLabel
+                                key={key}
+                                control={
+                                    <Checkbox 
+                                        size="small"
+                                        checked={visibleStatuses.includes(key)} 
+                                        onChange={() => {
+                                            setVisibleStatuses(prev => 
+                                                prev.includes(key) 
+                                                ? prev.filter(s => s !== key) 
+                                                : [...prev, key]
+                                            );
+                                        }}
+                                        sx={{
+                                            color: STATUS_COLORS[key],
+                                            '&.Mui-checked': {
+                                                color: STATUS_COLORS[key],
+                                            },
+                                        }}
+                                    />
+                                }
+                                label={<Typography variant="body2">{STATUS_LABELS[key]}</Typography>}
+                            />
+                        ))}
+                    </FormGroup>
+                </Box>
+            </Popover>
 
             {/* Bottom sheet z info o obiekcie */}
             <PropertyBottomSheet

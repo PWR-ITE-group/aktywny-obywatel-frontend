@@ -1,17 +1,22 @@
-import { Card, CardContent, Box, Typography, Chip, Stack, Grid } from '@mui/material';
+import { Card, CardContent, Box, Typography, Chip, Stack, Grid, CardActionArea } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CancelIcon from '@mui/icons-material/Cancel';
+import ArchiveIcon from '@mui/icons-material/Archive';
 import { STATUS_COLORS, STATUS_LABELS } from '../../config/mapConfig';
+import { useNavigate } from 'react-router-dom';
+import { BACKEND_CATEGORY_TO_LABEL } from '../../config/reportCategories';
 
-// Ikona + kolor wiodący dla statusu (jak zielony check "Problem naprawiony" na screenie 5).
+// Ikona + kolor wiodący dla statusu
 const statusMeta = (status) => {
     switch (status) {
-        case 'zakończone':   return { icon: <CheckCircleIcon fontSize="small" />, label: 'Problem naprawiony', color: 'success.main' };
-        case 'w realizacji': return { icon: <HourglassEmptyIcon fontSize="small" />, label: 'W realizacji',     color: 'info.main' };
-        case 'przyjęte':     return { icon: <AccessTimeIcon fontSize="small" />,    label: 'Przyjęte',          color: 'warning.main' };
-        case 'odrzucone':    return { icon: <CancelIcon fontSize="small" />,        label: 'Odrzucone',         color: 'error.main' };
+        case 'RESOLVED':     return { icon: <CheckCircleIcon fontSize="small" />, label: 'Rozwiązane', color: 'success.main' };
+        case 'ROUTED':       return { icon: <HourglassEmptyIcon fontSize="small" />, label: 'Przekazane do urzędu', color: 'info.main' };
+        case 'IN_PROGRESS':  return { icon: <HourglassEmptyIcon fontSize="small" />, label: 'W realizacji',     color: 'info.main' };
+        case 'NEW':          return { icon: <AccessTimeIcon fontSize="small" />,    label: 'Zgłoszone',          color: 'warning.main' };
+        case 'REJECTED':     return { icon: <CancelIcon fontSize="small" />,        label: 'Odrzucone',         color: 'error.main' };
+        case 'ARCHIVED':     return { icon: <ArchiveIcon fontSize="small" />,        label: 'Zarchiwizowane',    color: 'text.secondary' };
         default:             return { icon: <AccessTimeIcon fontSize="small" />,    label: STATUS_LABELS[status] ?? status, color: 'text.secondary' };
     }
 };
@@ -19,18 +24,20 @@ const statusMeta = (status) => {
 // Karta zgłoszenia z widokiem odpowiedzi urzędu, zdjęciami i datą.
 const ReportStatusCard = ({ report }) => {
     const meta = statusMeta(report.status);
+    const navigate = useNavigate();
 
     return (
         <Card sx={{ mb: 2 }}>
-            <CardContent sx={{ p: 2 }}>
-                {/* Nagłówek autora odpowiedzi */}
+            <CardActionArea onClick={() => navigate(`/zgloszenie/${report.id}`)}>
+                <CardContent sx={{ p: 2 }}>
+                    {/* Nagłówek autora odpowiedzi */}
                 <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ mb: 1 }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="subtitle2" fontWeight={700}>
-                            {report.authorityName ?? 'Urząd Miejski Wrocławia'}
+                            {report.assignedDepartment ?? report.authorityName ?? 'System Centralny Aktywny Obywatel'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            {report.authorityRole ?? 'Wydział odpowiedzialny za zgłoszenia'}
+                            Wydział obsługujący sprawę
                         </Typography>
                     </Box>
                 </Stack>
@@ -62,10 +69,10 @@ const ReportStatusCard = ({ report }) => {
 
                 {/* Kategoria + lokalizacja */}
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
-                    <Chip label={report.category} size="small" variant="outlined" />
-                    {report.location && (
+                    <Chip label={BACKEND_CATEGORY_TO_LABEL[report.category] ?? report.category} size="small" variant="outlined" />
+                    {(report.address?.displayName || report.location) && (
                         <Chip
-                            label={report.location}
+                            label={report.address?.displayName || report.location}
                             size="small"
                             variant="outlined"
                             sx={{ maxWidth: 240 }}
@@ -123,7 +130,8 @@ const ReportStatusCard = ({ report }) => {
                         Odpowiedź została udzielona w wyznaczonym czasie.
                     </Typography>
                 )}
-            </CardContent>
+                </CardContent>
+            </CardActionArea>
         </Card>
     );
 };

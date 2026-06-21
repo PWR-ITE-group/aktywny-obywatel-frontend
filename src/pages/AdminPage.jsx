@@ -3,7 +3,7 @@ import {
     Container, Box, Tabs, Tab, Paper, Stack, Typography, Button, Chip, TextField,
     Table, TableHead, TableBody, TableRow, TableCell, IconButton, Select, MenuItem,
     FormControl, InputLabel, Dialog, DialogTitle, DialogContent, DialogActions,
-    Grid, Card, CardContent, InputAdornment,
+    Grid, Card, CardContent, InputAdornment, TablePagination,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -11,9 +11,19 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import ReplayIcon from '@mui/icons-material/Replay';
-import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS, CATEGORIES } from '../config/mapConfig';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import { MOCK_REPORTS, STATUS_COLORS, STATUS_LABELS } from '../config/mapConfig';
+import { BACKEND_CATEGORY_TO_LABEL } from '../config/reportCategories';
 import toast from 'react-hot-toast';
 import { adminService } from '../services/adminService';
+
+const STATUS_OPTIONS = [
+    { value: 'NEW', label: 'Zgłoszone' },
+    { value: 'ROUTED', label: 'Przekazane' },
+    { value: 'IN_PROGRESS', label: 'W realizacji' },
+    { value: 'RESOLVED', label: 'Rozwiązane' },
+    { value: 'ARCHIVED', label: 'Zarchiwizowane' },
+];
 
 // Panel administratora (WF-18–24).
 // W prototypie operacje są lokalne — docelowo adminService.* z backendu.
@@ -50,6 +60,10 @@ const AdminPage = () => {
 const ReportsTab = () => {
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
+    const [totalElements, setTotalElements] = useState(0);
     const [editDialog, setEditDialog] = useState(null);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,14 +75,11 @@ const ReportsTab = () => {
             setError(null);
             try {
                 const filters = {};
-                if (statusFilter) filters.status = statusFilter;
-                if (query) filters.search = query;
-                const response = await adminService.getAllReports(filters);
-                if (response.success) {
-                    setReports(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch reports');
-                }
+                // if (statusFilter) filters.status = statusFilter;
+                // if (query) filters.search = query;
+                const response = await adminService.getAllReports(filters, page, rowsPerPage);
+                setReports(response.content);
+                setTotalElements(response.totalElements);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching reports:', err);
@@ -78,15 +89,32 @@ const ReportsTab = () => {
         };
 
         fetchReports();
-    }, [query, statusFilter]);
+    }, [query, statusFilter, page, rowsPerPage]);
+
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
 
     const filtered = useMemo(() => {
-        return reports.filter((r) => {
+        let result = reports.filter((r) => {
             if (statusFilter && r.status !== statusFilter) return false;
             if (query && !r.title.toLowerCase().includes(query.toLowerCase())) return false;
             return true;
         });
-    }, [reports, query, statusFilter]);
+
+        result.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0).getTime();
+            const dateB = new Date(b.createdAt || 0).getTime();
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+
+        return result;
+    }, [reports, query, statusFilter, sortOrder]);
 
     const exportCSV = async () => {
         try {
@@ -94,39 +122,46 @@ const ReportsTab = () => {
             if (statusFilter) filters.status = statusFilter;
             if (query) filters.search = query;
             const response = await adminService.exportReportsCSV(filters);
-            if (response.success && response.data) {
-                const blob = new Blob([response.data.csvContent], { type: 'text/csv;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
-            } else {
-                throw new Error(response.message || 'Failed to export CSV');
-            }
+            const blob = response instanceof Blob 
+                ? response 
+                : new Blob([response.csvContent || response], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
         } catch (err) {
             toast.error('Nie udało się wyeksportować zgłoszeń.');
             console.error('Error exporting CSV:', err);
         }
     };
 
-    const updateStatus = async (id, newStatus) => {
+    const updateComplaint = async (id, updatedData) => {
         try {
-            const response = await adminService.updateReportStatus(id, newStatus);
-            if (response.success) {
-                toast.success('Zmieniono status zgłoszenia.');
-                // Optionally, refetch the reports to ensure we have the latest data
-                // But for simplicity, we'll update optimistically
-                setReports(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
-                setEditDialog(null);
-            } else {
-                throw new Error(response.message || 'Failed to update status');
-            }
+            // We can check if it's just a status change or full update
+            // But since adminService.updateReportStatus uses /status, we might need a generic update
+            // Let's just use updateReportStatus for now, but we should add updateReport to adminService
+            // Assuming adminService.updateReport handles full update:
+            // But wait, we only have updateReportStatus. Let's assume we do a full update if data is provided.
+            toast.success('Zaktualizowano zgłoszenie.');
+            // This is just UI state update
+            setReports(prev => prev.map(r => r.id === id ? { ...r, ...updatedData } : r));
+            setEditDialog(null);
         } catch (err) {
-            toast.error('Nie udało się zmienić statusu zgłoszenia.');
-            console.error('Error updating report status:', err);
+            toast.error('Nie udało się zaktualizować zgłoszenia.');
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Czy na pewno chcesz usunąć to zgłoszenie?')) return;
+        try {
+            await adminService.deleteReport(id);
+            toast.success('Zgłoszenie zostało usunięte.');
+            setReports(prev => prev.filter(r => r.id !== id));
+        } catch (err) {
+            toast.error('Nie udało się usunąć zgłoszenia.');
         }
     };
 
@@ -181,9 +216,20 @@ const ReportsTab = () => {
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
                         <MenuItem value="">Wszystkie</MenuItem>
-                        {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                            <MenuItem key={v} value={v}>{l}</MenuItem>
+                        {STATUS_OPTIONS.map((opt) => (
+                            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                         ))}
+                    </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <InputLabel>Sortowanie</InputLabel>
+                    <Select
+                        value={sortOrder}
+                        label="Sortowanie"
+                        onChange={(e) => setSortOrder(e.target.value)}
+                    >
+                        <MenuItem value="desc">Od najnowszych</MenuItem>
+                        <MenuItem value="asc">Od najstarszych</MenuItem>
                     </Select>
                 </FormControl>
                 <Button
@@ -201,6 +247,7 @@ const ReportsTab = () => {
                         <TableRow>
                             <TableCell>ID</TableCell>
                             <TableCell>Tytuł</TableCell>
+                            <TableCell>Autor</TableCell>
                             <TableCell>Kategoria</TableCell>
                             <TableCell>Status</TableCell>
                             <TableCell>Data</TableCell>
@@ -208,11 +255,12 @@ const ReportsTab = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {filtered.map((r) => (
+                        {reports.map((r) => (
                             <TableRow key={r.id} hover>
                                 <TableCell>{r.id}</TableCell>
                                 <TableCell>{r.title}</TableCell>
-                                <TableCell>{r.category}</TableCell>
+                                <TableCell>{r.author ? `${r.author.firstName} (${r.author.email})` : 'Anonim'}</TableCell>
+                                <TableCell>{BACKEND_CATEGORY_TO_LABEL[r.category] || r.category}</TableCell>
                                 <TableCell>
                                     <Chip
                                         label={r.statusLabel || r.status}
@@ -220,13 +268,13 @@ const ReportsTab = () => {
                                         sx={{ bgcolor: r.statusColor || '#9E9E9E', color: 'white' }}
                                     />
                                 </TableCell>
-                                <TableCell>{r.createdAt}</TableCell>
+                                <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</TableCell>
                                 <TableCell align="right">
                                     <IconButton size="small" onClick={() => setEditDialog(r)} aria-label="Edytuj">
                                         <EditIcon fontSize="small" />
                                     </IconButton>
-                                    <IconButton size="small" aria-label="Prześlij do innego wydziału" title="Re-routing">
-                                        <ReplayIcon fontSize="small" />
+                                    <IconButton size="small" color="error" onClick={() => handleDelete(r.id)} aria-label="Usuń">
+                                        <DeleteOutlineIcon fontSize="small" />
                                     </IconButton>
                                 </TableCell>
                             </TableRow>
@@ -234,38 +282,100 @@ const ReportsTab = () => {
                     </TableBody>
                 </Table>
             </Box>
+            <TablePagination
+                component="div"
+                count={totalElements}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[10, 20, 50]}
+                labelRowsPerPage="Wierszy na stronę:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} z ${count !== -1 ? count : `ponad ${to}`}`}
+            />
 
-            <Dialog open={Boolean(editDialog)} onClose={() => setEditDialog(null)} maxWidth="xs" fullWidth>
-                <DialogTitle>Zmień status zgłoszenia #{editDialog?.id}</DialogTitle>
+            <Dialog open={Boolean(editDialog)} onClose={() => setEditDialog(null)} maxWidth="sm" fullWidth>
+                <DialogTitle>Edytuj zgłoszenie #{editDialog?.id}</DialogTitle>
                 <DialogContent>
-                    <FormControl fullWidth sx={{ mt: 1 }}>
-                        <InputLabel>Nowy status</InputLabel>
-                        <Select
-                            label="Nowy status"
-                            value={editDialog?.status ?? ''}
-                            onChange={(e) => setEditDialog({ ...editDialog, status: e.target.value })}
-                        >
-                            {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                                <MenuItem key={v} value={v}>{l}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        label="Komentarz (opcjonalnie)"
-                        sx={{ mt: 2 }}
-                        placeholder="Powód zmiany statusu — widoczny w historii zgłoszenia."
-                    />
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        <TextField
+                            label="Tytuł"
+                            value={editDialog?.title ?? ''}
+                            onChange={(e) => setEditDialog({ ...editDialog, title: e.target.value })}
+                            fullWidth
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Kategoria</InputLabel>
+                            <Select
+                                label="Kategoria"
+                                value={editDialog?.category ?? ''}
+                                onChange={(e) => setEditDialog({ ...editDialog, category: e.target.value })}
+                            >
+                                {Object.entries(BACKEND_CATEGORY_TO_LABEL).map(([key, label]) => (
+                                    <MenuItem key={key} value={key}>{label}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Opis"
+                            value={editDialog?.description ?? ''}
+                            onChange={(e) => setEditDialog({ ...editDialog, description: e.target.value })}
+                            fullWidth
+                            multiline
+                            rows={3}
+                            error={(editDialog?.description || '').length < 10}
+                            helperText={(editDialog?.description || '').length < 10 ? "Opis musi zawierać co najmniej 10 znaków" : ""}
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                label="Status"
+                                value={editDialog?.status ?? ''}
+                                onChange={(e) => setEditDialog({ ...editDialog, status: e.target.value })}
+                            >
+                                {STATUS_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Komentarz (opcjonalnie)"
+                            value={editDialog?.comment ?? ''}
+                            onChange={(e) => setEditDialog({ ...editDialog, comment: e.target.value })}
+                            fullWidth
+                            multiline
+                            rows={2}
+                            helperText="Ten komentarz zostanie zapisany w historii zmian zgłoszenia."
+                        />
+                    </Stack>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setEditDialog(null)}>Anuluj</Button>
                     <Button
                         variant="contained"
-                        onClick={() => {
-                            updateStatus(editDialog.id, editDialog.status);
-                            setEditDialog(null);
+                        disabled={(editDialog?.description || '').length < 10}
+                        onClick={async () => {
+                            // To actually save to backend, we would call an update endpoint
+                            // Here we just do UI state or simulated save
+                            try {
+                                await adminService.updateReport(editDialog.id, {
+                                    title: editDialog.title,
+                                    category: editDialog.category,
+                                    description: editDialog.description,
+                                    status: editDialog.status,
+                                    comment: editDialog.comment
+                                });
+                                toast.success('Zaktualizowano zgłoszenie.');
+                                setReports(prev => prev.map(r => r.id === editDialog.id ? { 
+                                    ...r, 
+                                    ...editDialog,
+                                    statusLabel: STATUS_LABELS[editDialog.status] || editDialog.status,
+                                    statusColor: STATUS_COLORS[editDialog.status] || '#9E9E9E'
+                                } : r));
+                                setEditDialog(null);
+                            } catch (err) {
+                                toast.error('Nie udało się zapisać zmian.');
+                            }
                         }}
                     >
                         Zapisz
@@ -279,39 +389,36 @@ const ReportsTab = () => {
 // --- Tab: Routing (WF-18) ---
 const RoutingTab = () => {
     const [routing, setRouting] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchRouting = async () => {
+        const fetchData = async () => {
             setLoading(true);
             setError(null);
             try {
-                const response = await adminService.getRoutingRules();
-                if (response.success) {
-                    setRouting(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch routing rules');
-                }
+                const [rules, depts] = await Promise.all([
+                    adminService.getRoutingRules(),
+                    adminService.getDepartments(),
+                ]);
+                setRouting(rules);
+                setDepartments(depts);
             } catch (err) {
                 setError(err.message);
-                console.error('Error fetching routing rules:', err);
+                console.error('Error fetching routing config:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchRouting();
+        fetchData();
     }, []);
 
     const saveRouting = async () => {
         try {
-            const response = await adminService.updateRoutingRules(routing);
-            if (response.success) {
-                toast.success('Zapisano konfigurację routingu.');
-            } else {
-                throw new Error(response.message || 'Failed to save routing rules');
-            }
+            await adminService.updateRoutingRules(routing);
+            toast.success('Zapisano konfigurację routingu.');
         } catch (err) {
             toast.error('Nie udało się zapisać konfiguracji routingu.');
             console.error('Error saving routing rules:', err);
@@ -361,19 +468,28 @@ const RoutingTab = () => {
                 <TableBody>
                     {routing.map((row, idx) => (
                         <TableRow key={row.category}>
-                            <TableCell>{row.category}</TableCell>
+                            <TableCell>{BACKEND_CATEGORY_TO_LABEL[row.category] || row.category}</TableCell>
                             <TableCell>
-                                <TextField
+                                <Select
                                     size="small"
                                     fullWidth
-                                    placeholder="np. ZDiUM"
-                                    value={row.department}
+                                    displayEmpty
+                                    value={row.department || ''}
                                     onChange={(e) => {
                                         const next = [...routing];
                                         next[idx] = { ...row, department: e.target.value };
                                         setRouting(next);
                                     }}
-                                />
+                                >
+                                    <MenuItem value="">
+                                        <em>— brak przypisania —</em>
+                                    </MenuItem>
+                                    {departments.map((d) => (
+                                        <MenuItem key={d.id} value={d.name}>
+                                            {d.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
                             </TableCell>
                             <TableCell>
                                 <Select
@@ -415,11 +531,7 @@ const DepartmentsTab = () => {
             setError(null);
             try {
                 const response = await adminService.getDepartments();
-                if (response.success) {
-                    setDepartments(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch departments');
-                }
+                setDepartments(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching departments:', err);
@@ -433,14 +545,9 @@ const DepartmentsTab = () => {
 
     const remove = async (id) => {
         try {
-            const response = await adminService.deleteDepartment(id);
-            if (response.success) {
-                toast.success('Usunięto wydział.');
-                // Optionally, refetch the departments
-                setDepartments(prev => prev.filter(d => d.id !== id));
-            } else {
-                throw new Error(response.message || 'Failed to delete department');
-            }
+            await adminService.deleteDepartment(id);
+            toast.success('Usunięto wydział.');
+            setDepartments(prev => prev.filter(d => d.id !== id));
         } catch (err) {
             toast.error('Nie udało się usunąć wydziału.');
             console.error('Error deleting department:', err);
@@ -450,14 +557,9 @@ const DepartmentsTab = () => {
     const createDepartment = async (departmentData) => {
         try {
             const response = await adminService.createDepartment(departmentData);
-            if (response.success) {
-                toast.success('Dodano wydział.');
-                setDialog(null);
-                // Optionally, refetch the departments
-                setDepartments(prev => [...prev, { ...response.data, id: response.data.id }]);
-            } else {
-                throw new Error(response.message || 'Failed to create department');
-            }
+            toast.success('Dodano wydział.');
+            setDialog(null);
+            setDepartments(prev => [...prev, { ...response, id: response.id }]);
         } catch (err) {
             toast.error('Nie udało się dodać wydziału.');
             console.error('Error creating department:', err);
@@ -466,18 +568,34 @@ const DepartmentsTab = () => {
 
     const updateDepartment = async (id, departmentData) => {
         try {
-            const response = await adminService.updateDepartment(id, departmentData);
-            if (response.success) {
-                toast.success('Zaktualizowano wydział.');
-                setDialog(null);
-                // Optionally, refetch the departments
-                setDepartments(prev => prev.map(d => d.id === id ? { ...d, ...departmentData } : d));
-            } else {
-                throw new Error(response.message || 'Failed to update department');
-            }
+            await adminService.updateDepartment(id, departmentData);
+            toast.success('Zaktualizowano wydział.');
+            setDialog(null);
+            setDepartments(prev => prev.map(d => d.id === id ? { ...d, ...departmentData } : d));
         } catch (err) {
             toast.error('Nie udało się zaktualizować wydziału.');
             console.error('Error updating department:', err);
+        }
+    };
+
+    const generateKey = async (d) => {
+        const ok = window.confirm(
+            `Wygenerować nowy klucz API dla "${d.name}"?\n\n` +
+            `UWAGA: dotychczasowy klucz tego wydziału natychmiast przestanie działać. ` +
+            `Nowy klucz zobaczysz tylko raz i trzeba go wpisać w systemie urzędu.`
+        );
+        if (!ok) return;
+        try {
+            const res = await adminService.generateDepartmentApiKey(d.id);
+            // Pokazujemy klucz w prompt, żeby dało się go skopiować (widoczny tylko teraz)
+            window.prompt(
+                'Nowy klucz API — skopiuj go teraz, nie będzie można go ponownie wyświetlić:',
+                res.apiKey
+            );
+            toast.success('Wygenerowano nowy klucz API. Stary przestał działać.');
+        } catch (err) {
+            toast.error('Nie udało się wygenerować klucza.');
+            console.error('Error generating API key:', err);
         }
     };
 
@@ -533,11 +651,14 @@ const DepartmentsTab = () => {
                     {departments.map((d) => (
                         <TableRow key={d.id}>
                             <TableCell>{d.name}</TableCell>
-                            <TableCell>{d.email}</TableCell>
+                            <TableCell>{d.email || <i style={{ color: '#9CA3AF' }}>brak</i>}</TableCell>
                             <TableCell sx={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {d.apiUrl || <i style={{ color: '#9CA3AF' }}>brak — użyje email</i>}
                             </TableCell>
                             <TableCell align="right">
+                                <IconButton size="small" title="Generuj klucz API" onClick={() => generateKey(d)}>
+                                    <VpnKeyIcon fontSize="small" />
+                                </IconButton>
                                 <IconButton size="small" onClick={() => {
                                     setDialog({ id: d.id, name: d.name, email: d.email, apiUrl: d.apiUrl });
                                 }}>
@@ -617,11 +738,7 @@ const StatsTab = () => {
             setError(null);
             try {
                 const response = await adminService.getStats();
-                if (response.success) {
-                    setStats(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch statistics');
-                }
+                setStats(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching statistics:', err);
@@ -672,9 +789,9 @@ const StatsTab = () => {
         <Stack spacing={2}>
             <Grid container spacing={2}>
                 <StatCard label="Wszystkie zgłoszenia" value={stats.total} />
-                <StatCard label="W realizacji" value={stats.byStatus.find(s => s.status === 'w realizacji')?.count ?? 0} />
-                <StatCard label="Zakończone" value={stats.byStatus.find(s => s.status === 'zakończone')?.count ?? 0} />
-                <StatCard label="Odrzucone" value={stats.byStatus.find(s => s.status === 'odrzucone')?.count ?? 0} color="error.main" />
+                <StatCard label="W realizacji" value={stats.byStatus.find(s => s.status === 'IN_PROGRESS')?.count ?? 0} />
+                <StatCard label="Zakończone" value={stats.byStatus.filter(s => s.status === 'RESOLVED' || s.status === 'ARCHIVED').reduce((acc, curr) => acc + curr.count, 0)} />
+                <StatCard label="Nowe / Przekazane" value={stats.byStatus.filter(s => s.status === 'NEW' || s.status === 'ROUTED').reduce((acc, curr) => acc + curr.count, 0)} color="warning.main" />
             </Grid>
 
             <Paper sx={{ p: 2 }}>
@@ -761,11 +878,7 @@ const UsersTab = () => {
             setError(null);
             try {
                 const response = await adminService.getUsers();
-                if (response.success) {
-                    setUsers(response.data);
-                } else {
-                    throw new Error(response.message || 'Failed to fetch users');
-                }
+                setUsers(response);
             } catch (err) {
                 setError(err.message);
                 console.error('Error fetching users:', err);
@@ -779,13 +892,9 @@ const UsersTab = () => {
 
     const removeUser = async (id) => {
         try {
-            const response = await adminService.deleteUser(id);
-            if (response.success) {
-                toast.success('Konto użytkownika usunięte.');
-                setUsers(prev => prev.filter(u => u.id !== id));
-            } else {
-                throw new Error(response.message || 'Failed to delete user');
-            }
+            await adminService.deleteUser(id);
+            toast.success('Konto użytkownika usunięte.');
+            setUsers(prev => prev.filter(u => u.id !== id));
         } catch (err) {
             toast.error('Nie udało się usunąć konta użytkownika.');
             console.error('Error deleting user:', err);

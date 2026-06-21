@@ -39,7 +39,7 @@ const Navbar = () => {
 
     const authLinks = user
         ? [
-            { label: 'Mój panel', to: '/dashboard', icon: <DashboardIcon /> },
+            { label: 'Moje zgłoszenia', to: '/dashboard', icon: <DashboardIcon /> },
             ...(user.role === 'admin'
                 ? [{ label: 'Panel admina', to: '/admin', icon: <AdminPanelSettingsIcon /> }]
                 : []),
@@ -120,7 +120,7 @@ const Navbar = () => {
                                             <ListItem disablePadding>
                                                 <ListItemButton
                                                     component={RouterLink}
-                                                    to="/login"
+                                                    to="/logowanie"
                                                     onClick={() => setDrawerOpen(false)}
                                                 >
                                                     <ListItemText primary="Zaloguj się" />
@@ -129,7 +129,7 @@ const Navbar = () => {
                                             <ListItem disablePadding>
                                                 <ListItemButton
                                                     component={RouterLink}
-                                                    to="/register"
+                                                    to="/rejestracja"
                                                     onClick={() => setDrawerOpen(false)}
                                                 >
                                                     <ListItemText primary="Zarejestruj się" />
@@ -174,7 +174,7 @@ const Navbar = () => {
                             <>
                                 <IconButton color="inherit" onClick={handleMenuOpen}>
                                     <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 14 }}>
-                                        {user.email?.[0]?.toUpperCase()}
+                                        {user.firstName?.[0]?.toUpperCase() || user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                                     </Avatar>
                                 </IconButton>
                                 <Menu
@@ -199,7 +199,7 @@ const Navbar = () => {
                                         onClick={handleMenuClose}
                                     >
                                         <AccountCircleIcon fontSize="small" sx={{ mr: 1 }} />
-                                        Mój panel
+                                        Moje zgłoszenia
                                     </MenuItem>
                                     <MenuItem onClick={handleLogout}>
                                         <LogoutIcon fontSize="small" sx={{ mr: 1 }} />

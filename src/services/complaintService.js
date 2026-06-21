@@ -1,7 +1,7 @@
 // complaintService.js
 import api from '../config/api';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 // SYMULACJA TABELI W BAZIE DANYCH (To tu admin będzie robił zmiany)
@@ -89,7 +89,7 @@ const MOCK_CATEGORIES_FROM_DB = [
         label: 'Palenie odpadów',
         color: '#F4511E',
         email: 'straz@smwroclaw.pl',
-        topics: ['Palenie odpadów / podejrzany dym z komina'],
+        topics: ['Palenie odpadów / podezrzany dym z komina'],
     },
     {
         id: 'parking',
@@ -180,7 +180,61 @@ export const complaintService = {
             return MOCK_CATEGORIES_FROM_DB;
         }
         const { data } = await api.get('/api/complaints/categories');
-        return data.data;
+        return data;
+    },
+
+    async getPopularTopics(limit = 5) {
+        if (USE_MOCK) {
+            await delay(200);
+            return [
+                'Dziury w drodze, jezdni lub chodniku miejskim',
+                'Zniszczone lub przepełnione kosze na śmieci',
+                'Niepoprawne parkowanie (zastawianie chodników, parkowanie przy przejściach/skrzyżowaniach)',
+                'Problem z oświetleniem ulicznym',
+                'Uszkodzona ławka na przystanku',
+            ].slice(0, limit);
+        }
+        const { data } = await api.get('/api/complaints/popular-topics', { params: { limit } });
+        return data;
+    },
+
+    async getAll(page = 0, size = 20) {
+        if (USE_MOCK) {
+            await delay(300);
+            return { content: [], totalPages: 0, totalElements: 0, pageNumber: 0, pageSize: 20 };
+        }
+        const { data } = await api.get('/api/complaints', { params: { page, size } });
+        return data; // Returns PagedResponseDto
+    },
+
+    async getMapReports(bounds) {
+        if (USE_MOCK) {
+            await delay(300);
+            return [];
+        }
+        const { minLat, maxLat, minLng, maxLng } = bounds;
+        const { data } = await api.get('/api/complaints/map', { 
+            params: { minLat, maxLat, minLng, maxLng } 
+        });
+        return data; // Returns List<ComplaintResponseDto>
+    },
+
+    async getUserReports(userId, page = 0, size = 20) {
+        if (USE_MOCK) {
+            await delay(300);
+            return { content: [], totalPages: 0, totalElements: 0, pageNumber: 0, pageSize: 20 };
+        }
+        const { data } = await api.get('/api/complaints/my', { params: { userId, page, size } });
+        return data; // Returns PagedResponseDto
+    },
+
+    async getById(id) {
+        if (USE_MOCK) {
+            await delay(300);
+            return null;
+        }
+        const { data } = await api.get(`/api/complaints/${id}`);
+        return data;
     },
 
     async create(complaintData) {
@@ -206,6 +260,49 @@ export const complaintService = {
             };
         }
         const { data } = await api.post('/api/complaints', complaintData);
-        return data.data;
+        return data;
+    },
+
+    // METODA DO DODAWANIA ZAŁĄCZNIKÓW
+    async addAttachment(complaintId, file) {
+        if (USE_MOCK) {
+            await delay(500);
+            // Symulacja sukcesu
+            return {
+                id: Date.now(),
+                complaintId,
+                filename: file.name,
+                uploadedAt: new Date().toISOString(),
+            };
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data } = await api.post(`/api/complaints/${complaintId}/attachments`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return data;
+    },
+
+    // METODA DO POBIERANIA ZAŁĄCZNIKÓW
+    async getAttachments(complaintId) {
+        if (USE_MOCK) {
+            await delay(300);
+            // Zwracamy pustą listę w trybie mock
+            return [];
+        }
+        const { data } = await api.get(`/api/complaints/${complaintId}/attachments`);
+        return data;
+    },
+
+    async incrementView(id) {
+        if (USE_MOCK) {
+            await delay(100);
+            return;
+        }
+        await api.post(`/api/complaints/${id}/views`);
     },
 };
