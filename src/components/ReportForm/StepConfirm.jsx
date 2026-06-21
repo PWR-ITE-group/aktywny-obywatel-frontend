@@ -7,7 +7,7 @@ import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 
 const StepConfirm = ({ formData }) => {
     // POPRAWKA: Wyciągamy categoryLabel oraz title zamiast nieistniejącego category
-    const { categoryLabel, title, description, photos, location } = formData;
+    const { categoryLabel, title, description, photos, location, urgent } = formData;
     const [previews, setPreviews] = useState([]);
 
     useEffect(() => {
@@ -46,10 +46,10 @@ const StepConfirm = ({ formData }) => {
                 </Typography>
             </Section>
 
-            {formData.priority && (
+            {urgent && (
                 <Section label="Priorytet">
-                    <Alert severity="warning" icon={<PriorityHighIcon />}>
-                        Zgłoszenie pilne — poprosimy odbiorcę o pilny kontakt (śr. czas odpowiedzi ~3h).
+                    <Alert severity="error" icon={<PriorityHighIcon />}>
+                        Zgłoszenie zostało oznaczone jako pilne.
                     </Alert>
                 </Section>
             )}
@@ -63,16 +63,19 @@ const StepConfirm = ({ formData }) => {
                     <Grid container spacing={1}>
                         {previews.map((url, i) => (
                             <Grid item xs={4} key={i}>
-                                <Box
-                                    sx={{
-                                        pt: '75%',
-                                        borderRadius: 1.5,
-                                        backgroundImage: `url(${url})`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
-                                        bgcolor: 'grey.100',
-                                    }}
-                                />
+                                <Box sx={{ width: '100%', height: 100, borderRadius: 1.5, overflow: 'hidden', bgcolor: 'grey.100' }}>
+                                    <Box
+                                        component="img"
+                                        src={url}
+                                        alt={`Zdjęcie ${i + 1}`}
+                                        sx={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            display: 'block'
+                                        }}
+                                    />
+                                </Box>
                             </Grid>
                         ))}
                     </Grid>

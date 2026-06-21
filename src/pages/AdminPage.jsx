@@ -75,8 +75,9 @@ const ReportsTab = () => {
             setError(null);
             try {
                 const filters = {};
-                // if (statusFilter) filters.status = statusFilter;
-                // if (query) filters.search = query;
+                if (statusFilter) filters.status = statusFilter;
+                if (query) filters.search = query;
+                if (sortOrder) filters.sortOrder = sortOrder;
                 const response = await adminService.getAllReports(filters, page, rowsPerPage);
                 setReports(response.content);
                 setTotalElements(response.totalElements);
@@ -89,7 +90,7 @@ const ReportsTab = () => {
         };
 
         fetchReports();
-    }, [query, statusFilter, page, rowsPerPage]);
+    }, [query, statusFilter, sortOrder, page, rowsPerPage]);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -99,22 +100,6 @@ const ReportsTab = () => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     };
-
-    const filtered = useMemo(() => {
-        let result = reports.filter((r) => {
-            if (statusFilter && r.status !== statusFilter) return false;
-            if (query && !r.title.toLowerCase().includes(query.toLowerCase())) return false;
-            return true;
-        });
-
-        result.sort((a, b) => {
-            const dateA = new Date(a.createdAt || 0).getTime();
-            const dateB = new Date(b.createdAt || 0).getTime();
-            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-        });
-
-        return result;
-    }, [reports, query, statusFilter, sortOrder]);
 
     const exportCSV = async () => {
         try {
@@ -226,7 +211,10 @@ const ReportsTab = () => {
                     <Select
                         value={sortOrder}
                         label="Sortowanie"
-                        onChange={(e) => setSortOrder(e.target.value)}
+                        onChange={(e) => {
+                            setSortOrder(e.target.value);
+                            setPage(0);
+                        }}
                     >
                         <MenuItem value="desc">Od najnowszych</MenuItem>
                         <MenuItem value="asc">Od najstarszych</MenuItem>

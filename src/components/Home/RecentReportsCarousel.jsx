@@ -54,7 +54,7 @@ const RecentReportsCarousel = () => {
     return (
         <Box sx={{ pb: 1 }}>
             <Box sx={{ px: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                <Typography variant="h5" fontWeight={800} sx={{ color: '#1e293b', textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}>
                     Zgłoszenia w okolicy
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -135,8 +135,9 @@ const RecentReportsCarousel = () => {
                     overflowX: 'auto',
                     gap: 2,
                     px: 2,
-                    pb: 2,
-                    scrollSnapType: 'x mandatory',
+                    pt: 1.5,
+                    pb: 3.5,
+                    scrollSnapType: 'x proximity',
                     '&::-webkit-scrollbar': { display: 'none' },
                     scrollbarWidth: 'none',
                 }}
@@ -148,7 +149,7 @@ const RecentReportsCarousel = () => {
                             sx={{
                                 minWidth: 260,
                                 maxWidth: 280,
-                                scrollSnapAlign: 'start',
+                                scrollSnapAlign: 'center',
                                 opacity: 0.7,
                                 borderRadius: 3,
                             }}
@@ -171,11 +172,11 @@ const RecentReportsCarousel = () => {
                             sx={{
                                 minWidth: 260,
                                 maxWidth: 280,
-                                scrollSnapAlign: 'start',
+                                scrollSnapAlign: 'center',
                                 cursor: 'pointer',
-                                border: 'none',
+                                border: r.urgent ? '2px solid #ef4444' : 'none',
                                 borderRadius: 3,
-                                bgcolor: 'rgba(255, 255, 255, 0.95)',
+                                bgcolor: r.urgent ? 'error.50' : 'rgba(255, 255, 255, 0.95)',
                                 backdropFilter: 'blur(10px)',
                                 transition: 'transform 0.2s, box-shadow 0.2s',
                                 '&:hover': {
@@ -198,6 +199,9 @@ const RecentReportsCarousel = () => {
                                         <Typography variant="caption" color="text.secondary" noWrap>
                                             {BACKEND_CATEGORY_TO_LABEL[r.category] ?? r.category}
                                         </Typography>
+                                        {r.urgent && (
+                                            <Chip size="small" label="PILNE" color="error" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800 }} />
+                                        )}
                                     </Stack>
                                     <Box sx={{ minWidth: 0, flex: 1 }}>
                                         <Typography variant="subtitle2" fontWeight={700} noWrap>

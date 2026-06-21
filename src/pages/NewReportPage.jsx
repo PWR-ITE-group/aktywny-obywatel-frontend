@@ -27,7 +27,8 @@ const INITIAL_FORM = {
     description: '',
     photos: [],
     location: null,     // Tablica [lat, lng]
-    addressDetails: null // Pełny obiekt adresowy z geokodera Nominatim
+    addressDetails: null, // Pełny obiekt adresowy z geokodera Nominatim
+    urgent: false       // Flaga pilnego zgłoszenia
 };
 
 const NewReportPage = () => {
@@ -81,6 +82,7 @@ const NewReportPage = () => {
                 title: formData.title || "Nowe zgłoszenie",
                 category: backendCategory,
                 description: formData.description?.trim() || "Brak opisu",
+                urgent: formData.urgent || /pilne/i.test(formData.description || '') || /pilne/i.test(formData.title || ''),
                 userId: user?.id ? Number(user.id) : (localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : 1),
                 address: {
                     displayName: osm?.display_name || "Nieznany adres",
@@ -141,9 +143,10 @@ const NewReportPage = () => {
             case 1:
                 return (
                     <StepDetails
+                        title={formData.title}
                         description={formData.description}
                         photos={formData.photos}
-                        priority={formData.priority}
+                        urgent={formData.urgent}
                         onChange={updateForm}
                     />
                 );
