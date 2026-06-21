@@ -57,7 +57,7 @@ const StepDetails = ({ title, description, photos, urgent, onChange }) => {
     };
 
     const remaining = DESCRIPTION_MAX - description.length;
-    const canAddMore = photos.length < PHOTO_LIMITS.MAX_COUNT;
+
 
     const isForcedUrgent = /pilne/i.test(description || '') || /pilne/i.test(title || '');
     const effectiveUrgent = urgent || isForcedUrgent;

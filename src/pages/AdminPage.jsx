@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Container, Box, Tabs, Tab, Paper, Stack, Typography, Button, Chip, TextField,
     Table, TableHead, TableBody, TableRow, TableCell, IconButton, Select, MenuItem,
@@ -116,7 +116,7 @@ const ReportsTab = () => {
             a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
             a.click();
             URL.revokeObjectURL(url);
-            toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
+            toast.success(`Wyeksportowano ${totalElements} zgłoszeń.`);
         } catch (err) {
             toast.error('Nie udało się wyeksportować zgłoszeń.');
             console.error('Error exporting CSV:', err);

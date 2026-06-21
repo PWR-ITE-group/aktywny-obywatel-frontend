@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import {
     Box, TextField, InputAdornment, Tabs, Tab, List, ListItemButton,
@@ -65,7 +65,7 @@ const renderTopic = (topicString, search = '') => {
     if (match) {
         const title = match[1];
         const content = match[2];
-        const isDepartment = /^[A-ZŚĆŹŻ][A-Za-z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ \/]*$/.test(content);
+        const isDepartment = /^[A-ZŚĆŹŻ][A-Za-z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ /]*$/.test(content);
         
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>

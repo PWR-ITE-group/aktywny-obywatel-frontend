@@ -15,7 +15,7 @@ const PropertyBottomSheet = ({
                                  open,
                                  onClose,
                                  property,
-                                 onSelect,
+
                                  onToggleFavorite,
                              }) => {
     const navigate = useNavigate();

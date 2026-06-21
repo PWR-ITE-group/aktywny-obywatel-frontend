@@ -59,6 +59,7 @@ const StepLocation = ({ location, onChange }) => {
             })
             .catch(() => {});
         return () => ctrl.abort();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
 
     const useMyLocation = () => {

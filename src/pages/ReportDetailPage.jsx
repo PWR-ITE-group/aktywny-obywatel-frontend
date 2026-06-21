@@ -107,7 +107,7 @@ const ReportDetailPage = () => {
         };
         fetchReport();
         return () => { mounted = false; };
-    }, [id]);
+    }, [id, user?.isAdmin]);
 
     if (loading) {
         return (
