@@ -64,9 +64,9 @@ const UserDashboardPage = () => {
 
         // 1. Tab filter (Status)
         if (tab === 'active') {
-            result = result.filter((r) => r.status !== 'RESOLVED' && r.status !== 'zakończone' && r.status !== 'odrzucone');
+            result = result.filter((r) => r.status !== 'RESOLVED' && r.status !== 'zakończone' && r.status !== 'odrzucone' && r.status !== 'ARCHIVED');
         } else if (tab === 'done') {
-            result = result.filter((r) => r.status === 'RESOLVED' || r.status === 'zakończone');
+            result = result.filter((r) => r.status === 'RESOLVED' || r.status === 'zakończone' || r.status === 'ARCHIVED');
         }
 
         // 2. Category filter
@@ -209,17 +209,17 @@ const UserDashboardPage = () => {
                                     W realizacji / Nowe
                                 </Typography>
                                 <Typography variant="h6" fontWeight={700} color="warning.main">
-                                    {reports.filter(r => r.status !== 'RESOLVED' && r.status !== 'zakończone' && r.status !== 'odrzucone').length}
+                                    {reports.filter(r => r.status === 'NEW' || r.status === 'ROUTED' || r.status === 'IN_PROGRESS').length}
                                 </Typography>
                             </Box>
                         </Grid>
                         <Grid item xs={4}>
                             <Box sx={{ textAlign: 'center', p: 1.5, bgcolor: 'rgba(22, 163, 74, 0.05)', borderRadius: 3, border: '1px solid rgba(22, 163, 74, 0.1)' }}>
                                 <Typography variant="caption" color="success.main" display="block" fontWeight={500}>
-                                    Naprawione / Zamknięte
+                                    Rozwiązane / Zakończone
                                 </Typography>
                                 <Typography variant="h6" fontWeight={700} color="success.main">
-                                    {reports.filter(r => r.status === 'RESOLVED' || r.status === 'zakończone').length}
+                                    {reports.filter(r => r.status === 'RESOLVED' || r.status === 'ARCHIVED').length}
                                 </Typography>
                             </Box>
                         </Grid>

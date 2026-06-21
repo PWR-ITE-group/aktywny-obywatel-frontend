@@ -46,7 +46,7 @@ export const adminService = {
       await delay(500);
       return { csvContent: 'id,title,category,status,lat,lng,createdAt\n1,Test,Drogi i chodniki,złożone,51.1079,17.0385,2026-04-10' };
     }
-    const { data } = await api.get('/api/admin/reports/export', {
+    const { data } = await api.get('/api/admin/complaints/export', {
       params: filters,
       responseType: 'blob'
     });
@@ -158,9 +158,18 @@ export const adminService = {
     // Map backend array to UI expected format
     const total = data.reduce((sum, item) => sum + item.totalComplaints, 0);
     
+    const complaintsRes = await api.get('/api/admin/complaints', { params: { page: 0, size: 10000 } });
+    const complaints = complaintsRes.data.content;
+    
+    const byStatusObj = {};
+    complaints.forEach(item => {
+      const status = item.complaint.status;
+      byStatusObj[status] = (byStatusObj[status] || 0) + 1;
+    });
+
     return {
       total,
-      byStatus: [], // Not supported by current backend API
+      byStatus: Object.entries(byStatusObj).map(([status, count]) => ({ status, count })),
       byCategory: data.map(item => ({
         category: item.category,
         count: item.totalComplaints,

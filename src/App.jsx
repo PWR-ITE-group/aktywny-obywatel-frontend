@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
-import { Toaster } from 'react-hot-toast';
 import VerificationPage from './pages/VerificationPage';
 import theme from './theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -55,7 +54,6 @@ const App = () => {
             <CssBaseline />
             <AuthProvider>
                 <BrowserRouter>
-                    <Toaster position="top-center" />
                     <Routes>
                         {/* Trasy z dolną nawigacją / topbarem */}
                         <Route element={<MainLayout />}>

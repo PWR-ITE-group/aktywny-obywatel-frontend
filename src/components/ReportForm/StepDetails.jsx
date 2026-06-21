@@ -179,44 +179,6 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
                 )}
             </Box>
 
-            {/* Priorytet */}
-            <Box
-                sx={{
-                    border: '1px solid',
-                    borderColor: priority ? 'error.main' : 'divider',
-                    borderRadius: 2,
-                    p: 2,
-                    bgcolor: priority ? 'error.50' : 'background.paper',
-                    transition: 'all 0.2s',
-                }}
-            >
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={Boolean(priority)}
-                            onChange={(e) => onChange({ priority: e.target.checked })}
-                            color="error"
-                            icon={<PriorityHighIcon sx={{ color: 'action.disabled' }} />}
-                            checkedIcon={<PriorityHighIcon sx={{ color: 'error.main' }} />}
-                        />
-                    }
-                    label={
-                        <Box>
-                            <Typography variant="body2" fontWeight={600}>
-                                Zgłoszenie pilne
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Zaznacz jeśli problem stanowi bezpośrednie zagrożenie lub wymaga natychmiastowej reakcji.
-                            </Typography>
-                        </Box>
-                    }
-                />
-                {priority && (
-                    <Alert severity="warning" icon={<PriorityHighIcon />} sx={{ mt: 1.5 }}>
-                        Poprosimy odbiorcę o pilny kontakt. Średni czas odpowiedzi w takich przypadkach wynosi około 3 godzin.
-                    </Alert>
-                )}
-            </Box>
         </Stack>
     );
 };

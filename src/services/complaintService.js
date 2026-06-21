@@ -183,6 +183,21 @@ export const complaintService = {
         return data;
     },
 
+    async getPopularTopics(limit = 5) {
+        if (USE_MOCK) {
+            await delay(200);
+            return [
+                'Dziury w drodze, jezdni lub chodniku miejskim',
+                'Zniszczone lub przepełnione kosze na śmieci',
+                'Niepoprawne parkowanie (zastawianie chodników, parkowanie przy przejściach/skrzyżowaniach)',
+                'Problem z oświetleniem ulicznym',
+                'Uszkodzona ławka na przystanku',
+            ].slice(0, limit);
+        }
+        const { data } = await api.get('/api/complaints/popular-topics', { params: { limit } });
+        return data;
+    },
+
     async getAll(page = 0, size = 20) {
         if (USE_MOCK) {
             await delay(300);

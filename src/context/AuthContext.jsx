@@ -41,12 +41,10 @@ export const AuthProvider = ({ children }) => {
                             lastName: 'Admin'
                         });
                     } else {
-                        const tokenData = parseJwt(savedToken);
-                        setUser({
-                            id: 1, // Fallback ID
-                            email: tokenData?.sub || 'user@example.com',
-                            role: 'user' // Default role
-                        });
+                        // User profile couldn't be loaded (e.g., deleted from DB), so clear the token and log out
+                        setToken(null);
+                        setUser(null);
+                        localStorage.removeItem('token');
                     }
                 }
             }

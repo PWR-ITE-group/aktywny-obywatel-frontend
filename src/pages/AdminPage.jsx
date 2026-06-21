@@ -122,7 +122,9 @@ const ReportsTab = () => {
             if (statusFilter) filters.status = statusFilter;
             if (query) filters.search = query;
             const response = await adminService.exportReportsCSV(filters);
-            const blob = new Blob([response.csvContent], { type: 'text/csv;charset=utf-8' });
+            const blob = response instanceof Blob 
+                ? response 
+                : new Blob([response.csvContent || response], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -649,7 +651,7 @@ const DepartmentsTab = () => {
                     {departments.map((d) => (
                         <TableRow key={d.id}>
                             <TableCell>{d.name}</TableCell>
-                            <TableCell>{d.email}</TableCell>
+                            <TableCell>{d.email || <i style={{ color: '#9CA3AF' }}>brak</i>}</TableCell>
                             <TableCell sx={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {d.apiUrl || <i style={{ color: '#9CA3AF' }}>brak — użyje email</i>}
                             </TableCell>
@@ -787,9 +789,9 @@ const StatsTab = () => {
         <Stack spacing={2}>
             <Grid container spacing={2}>
                 <StatCard label="Wszystkie zgłoszenia" value={stats.total} />
-                <StatCard label="W realizacji" value={stats.byStatus.find(s => s.status === 'w realizacji')?.count ?? 0} />
-                <StatCard label="Zakończone" value={stats.byStatus.find(s => s.status === 'zakończone')?.count ?? 0} />
-                <StatCard label="Odrzucone" value={stats.byStatus.find(s => s.status === 'odrzucone')?.count ?? 0} color="error.main" />
+                <StatCard label="W realizacji" value={stats.byStatus.find(s => s.status === 'IN_PROGRESS')?.count ?? 0} />
+                <StatCard label="Zakończone" value={stats.byStatus.filter(s => s.status === 'RESOLVED' || s.status === 'ARCHIVED').reduce((acc, curr) => acc + curr.count, 0)} />
+                <StatCard label="Nowe / Przekazane" value={stats.byStatus.filter(s => s.status === 'NEW' || s.status === 'ROUTED').reduce((acc, curr) => acc + curr.count, 0)} color="warning.main" />
             </Grid>
 
             <Paper sx={{ p: 2 }}>
