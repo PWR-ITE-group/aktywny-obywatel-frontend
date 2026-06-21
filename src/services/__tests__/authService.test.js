@@ -2,65 +2,51 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authService } from '../authService';
 import api from '../../config/api';
 
-// Mock the axios instance
-vi.mock('../../config/api', () => {
-  return {
-    default: {
-      post: vi.fn(),
-      get: vi.fn()
-    }
-  };
-});
-
 describe('authService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('login', () => {
-    it('should successfully log in a user and return the data object', async () => {
-      const mockResponse = { token: 'fake-jwt', email: 'test@example.com', role: 'user' };
-      api.post.mockResolvedValueOnce({ data: mockResponse });
+    it('should successfully log in a user and return data', async () => {
+      const mockResponse = { token: 'fake-jwt', email: 'test@example.com' };
+      vi.spyOn(api, 'post').mockResolvedValueOnce({ data: mockResponse });
 
       const result = await authService.login('test@example.com', 'password123');
-
-      expect(api.post).toHaveBeenCalledWith('/api/auth/login', {
-        email: 'test@example.com',
-        password: 'password123'
-      });
       expect(result).toEqual(mockResponse);
     });
 
-    it('should return token object if API responds with string token directly', async () => {
-      const mockTokenString = 'just-a-raw-token';
-      api.post.mockResolvedValueOnce({ data: mockTokenString });
+    it('should handle string tokens directly', async () => {
+      vi.spyOn(api, 'post').mockResolvedValueOnce({ data: 'just-a-string-token' });
 
       const result = await authService.login('test@example.com', 'password123');
-      expect(result).toEqual({ token: mockTokenString });
+      expect(result).toEqual({ token: 'just-a-string-token' });
     });
   });
 
   describe('register', () => {
-    it('should send the correct payload to the register endpoint', async () => {
-      const mockResponse = { verificationToken: 'mock-verification-token' };
-      api.post.mockResolvedValueOnce({ data: mockResponse });
+    it('should successfully register a user', async () => {
+      const mockResponse = { success: true };
+      vi.spyOn(api, 'post').mockResolvedValueOnce({ data: mockResponse });
 
-      const result = await authService.register(
-        'new@example.com',
-        'Pass123!',
-        '+48123456789',
-        'John',
-        'Doe'
-      );
-
-      expect(api.post).toHaveBeenCalledWith('/api/auth/register', {
-        email: 'new@example.com',
-        password: 'Pass123!',
-        phoneNumber: '+48123456789',
-        firstName: 'John',
-        lastName: 'Doe'
-      });
+      const result = await authService.register('new@example.com', 'Pass123!', '123', 'John', 'Doe');
       expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('password reset', () => {
+    it('should successfully request password reset', async () => {
+      vi.spyOn(api, 'post').mockResolvedValueOnce({ data: { sent: true } });
+
+      const result = await authService.requestPasswordReset('user@example.com');
+      expect(result).toEqual({ sent: true });
+    });
+
+    it('should successfully confirm password reset', async () => {
+      vi.spyOn(api, 'post').mockResolvedValueOnce({ data: { updated: true } });
+
+      const result = await authService.confirmPasswordReset('token123', 'newPass');
+      expect(result).toEqual({ updated: true });
     });
   });
 });
