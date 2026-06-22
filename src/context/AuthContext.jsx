@@ -9,7 +9,13 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState(localStorage.getItem('token'));
 
-
+    const parseJwt = (token) => {
+        try {
+            return JSON.parse(atob(token.split('.')[1]));
+        } catch (e) {
+            return null;
+        }
+    };
 
     useEffect(() => {
         const initializeAuth = async () => {
@@ -35,10 +41,13 @@ export const AuthProvider = ({ children }) => {
                             lastName: 'Admin'
                         });
                     } else {
-                        // User profile couldn't be loaded (e.g., deleted from DB), so clear the token and log out
-                        setToken(null);
-                        setUser(null);
-                        localStorage.removeItem('token');
+                        const tokenData = parseJwt(savedToken);
+                        console.log('Token data:', tokenData);
+                        setUser({
+                            id: 1, // Fallback ID
+                            email: tokenData?.sub || 'user@example.com',
+                            role: 'user' // Default role
+                        });
                     }
                 }
             }
@@ -115,7 +124,6 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

@@ -27,8 +27,7 @@ const INITIAL_FORM = {
     description: '',
     photos: [],
     location: null,     // Tablica [lat, lng]
-    addressDetails: null, // Pełny obiekt adresowy z geokodera Nominatim
-    urgent: false       // Flaga pilnego zgłoszenia
+    addressDetails: null // Pełny obiekt adresowy z geokodera Nominatim
 };
 
 const NewReportPage = () => {
@@ -52,8 +51,9 @@ const NewReportPage = () => {
     };
 
     const canProceed = () => {
-        if (activeStep === 0) return Boolean(formData.title); // Tytuł jest wymagany
-        if (activeStep === 2) return Boolean(formData.location);
+        if (activeStep === 0) return Boolean(formData.categoryId); // wybrana kategoria/temat
+        if (activeStep === 1) return Boolean(formData.description && formData.description.trim()); // opis wymagany
+        if (activeStep === 2) return Boolean(formData.location); // lokalizacja wymagana
         return true;
     };
 
@@ -66,24 +66,37 @@ const NewReportPage = () => {
         }
     };
     const handleSubmit = async () => {
+        // Walidacja: opis, kategoria i lokalizacja są obowiązkowe (tytuł opcjonalny)
+        if (!formData.description || !formData.description.trim()) {
+            toast.error('Opis zgłoszenia jest wymagany.');
+            return;
+        }
+        if (!formData.categoryId) {
+            toast.error('Wybierz kategorię zgłoszenia.');
+            return;
+        }
+        if (!formData.location) {
+            toast.error('Wskaż lokalizację na mapie.');
+            return;
+        }
+
         setSubmitting(true);
         try {
             const osm = formData.addressDetails;
 
             // Kategoria idzie do backendu bez zmian - klucze kategorii i reguł routingu
-            // są spójne (np. 'roads' = 'roads'). Fallback tylko gdy pole puste.
-            let backendCategory = formData.categoryId || 'other';
+            // są spójne (np. 'roads' = 'roads').
+            let backendCategory = formData.categoryId;
 
             // 2. Upewniamy się, że ID użytkownika to czysta liczba (Long), usuwając ryzyko przekazania stringa
-            // eslint-disable-next-line no-unused-vars
             const rawUserId = user?.id ? Number(user.id) : 1;
 
-            // 3. Budujemy payload kropka w kropkę pod ComplaintRequestDto oraz AddressDto
+            // 3. Budujemy payload pod ComplaintRequestDto oraz AddressDto
             const complaintData = {
-                title: formData.title || "Nowe zgłoszenie",
+                title: formData.title?.trim() || null,
                 category: backendCategory,
-                description: formData.description?.trim() || "Brak opisu",
-                urgent: formData.urgent || /pilne/i.test(formData.description || '') || /pilne/i.test(formData.title || ''),
+                description: formData.description.trim(),
+                urgent: Boolean(formData.priority),
                 userId: user?.id ? Number(user.id) : (localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : 1),
                 address: {
                     displayName: osm?.display_name || "Nieznany adres",
@@ -97,12 +110,6 @@ const NewReportPage = () => {
                     country: osm?.address?.country || "Polska"
                 }
             };
-
-            console.log("Wysyłany payload do backendu:", complaintData);
-            // DODAJ TO TUŻ PRZED WYSYŁKĄ:
-            console.log("DOKŁADNY PAYLOAD WYSYŁANY DO MICHAŁA:");
-            console.log(JSON.stringify(complaintData, null, 2));
-
 
             const createdComplaint = await complaintService.create(complaintData);
 
@@ -144,10 +151,9 @@ const NewReportPage = () => {
             case 1:
                 return (
                     <StepDetails
-                        title={formData.title}
                         description={formData.description}
                         photos={formData.photos}
-                        urgent={formData.urgent}
+                        priority={formData.priority}
                         onChange={updateForm}
                     />
                 );

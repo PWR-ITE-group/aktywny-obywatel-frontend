@@ -12,6 +12,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import PersonIcon from '@mui/icons-material/Person';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { useAuth } from '../../context/AuthContext';
 
@@ -40,6 +41,7 @@ const Navbar = () => {
     const authLinks = user
         ? [
             { label: 'Moje zgłoszenia', to: '/dashboard', icon: <DashboardIcon /> },
+            { label: 'Moje dane', to: '/profil', icon: <PersonIcon /> },
             ...(user.role === 'admin'
                 ? [{ label: 'Panel admina', to: '/admin', icon: <AdminPanelSettingsIcon /> }]
                 : []),
@@ -200,6 +202,14 @@ const Navbar = () => {
                                     >
                                         <AccountCircleIcon fontSize="small" sx={{ mr: 1 }} />
                                         Moje zgłoszenia
+                                    </MenuItem>
+                                    <MenuItem
+                                        component={RouterLink}
+                                        to="/profil"
+                                        onClick={handleMenuClose}
+                                    >
+                                        <PersonIcon fontSize="small" sx={{ mr: 1 }} />
+                                        Moje dane
                                     </MenuItem>
                                     <MenuItem onClick={handleLogout}>
                                         <LogoutIcon fontSize="small" sx={{ mr: 1 }} />

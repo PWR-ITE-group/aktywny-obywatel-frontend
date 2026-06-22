@@ -5,11 +5,13 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import SendIcon from '@mui/icons-material/Send';
 import RecentReportsCarousel from '../components/Home/RecentReportsCarousel';
 import HomeCategoryChips from '../components/Home/HomeCategoryChips';
+import backgroundImg from "../assets/luk_wro-centennial-hall.jpg";
+
 
 // URL tła — możesz podmienić na zdjęcie Wrocławia (np. Rynek, Ostrów Tumski).
 // Jeśli używasz local asset, zaimportuj go i wstaw w `backgroundImage`.
 const BG_IMAGE_URL =
-    'https://images.unsplash.com/photo-1578929869335-87f7ae90c01c?auto=format&fit=crop&w=1600&q=70';
+    'https://pixabay.com/photos/centennial-hall-wroclaw-poland-4496672/';
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -17,17 +19,13 @@ const HomePage = () => {
     return (
         <Box
             sx={{
-                position: 'relative',
-                minHeight: 'calc(100vh - 68px)', // minus BottomNav
-                // Tło — duże zdjęcie Wrocławia z lekkim przyciemnieniem
-                backgroundImage: `
-                    linear-gradient(180deg, rgba(244,245,247,0) 0%, rgba(91,95,237,0.35) 60%, rgba(91,95,237,0.75) 100%),
-                    url(${BG_IMAGE_URL})
-                `,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
                 display: 'flex',
                 flexDirection: 'column',
+                minHeight: '100vh',
+                backgroundImage: `url(${backgroundImg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
             }}
         >
             {/* Górny pasek — ikony po prawej, jak na screenie 1 */}

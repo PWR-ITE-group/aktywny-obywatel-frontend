@@ -60,9 +60,12 @@ const RegisterPage = () => {
             const cleanPhone = form.phone.replace(/[\s\-().]/g, '');
             await register(form.email, form.password, cleanPhone, form.firstName, form.lastName);
             toast.success('Konto zostało utworzone! Sprawdź email w celu weryfikacji.');
-            navigate('/dashboard');
-        } catch {
-            setErrors({ general: 'Nie udało się utworzyć konta. Spróbuj ponownie.' });
+            navigate('/logowanie');
+        } catch (err) {
+            const msg = err.response?.data?.error
+                || err.response?.data?.message
+                || 'Nie udało się utworzyć konta. Spróbuj ponownie.';
+            setErrors({ general: msg });
         } finally {
             setLoading(false);
         }

@@ -46,14 +46,9 @@ const LoginPage = () => {
             }
         } catch (err) {
             console.log(err);
-            let msg = err.response?.data?.message || err.message || 'Błąd logowania';
-            
-            if (err.response?.status === 401 || err.response?.status === 403) {
-                msg = 'Nieprawidłowy adres e-mail lub hasło. Upewnij się również, że konto zostało zweryfikowane.';
-            } else if (err.response?.status === 404) {
-                msg = 'Podane konto nie istnieje.';
-            }
-
+            const msg = err.response?.data?.error
+                || err.response?.data?.message
+                || 'Nieprawidłowy email lub hasło';
             setError(msg);
         } finally {
             setLoading(false);
