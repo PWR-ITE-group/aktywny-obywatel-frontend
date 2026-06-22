@@ -107,7 +107,7 @@ const ReportDetailPage = () => {
         };
         fetchReport();
         return () => { mounted = false; };
-    }, [id]);
+    }, [id, user?.isAdmin]);
 
     if (loading) {
         return (
@@ -148,6 +148,14 @@ const ReportDetailPage = () => {
                     <Paper sx={{ p: 2.5 }}>
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }} flexWrap="wrap">
                             <Chip label={BACKEND_CATEGORY_TO_LABEL[report.category] ?? report.category} size="small" />
+                            {report.assignedDepartment && (
+                                <Chip 
+                                    label={report.assignedDepartment} 
+                                    size="small" 
+                                    variant="outlined" 
+                                    color="primary" 
+                                />
+                            )}
                             <Chip
                                 label={STATUS_LABELS[report.status]}
                                 size="small"

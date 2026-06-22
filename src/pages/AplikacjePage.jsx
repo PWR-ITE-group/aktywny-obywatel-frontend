@@ -1,7 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { Box, Typography, CircularProgress, Container } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { complaintService } from '../services/complaintService';
 import { BACKEND_CATEGORY_TO_LABEL } from '../config/reportCategories';
 
 const AplikacjePage = () => {

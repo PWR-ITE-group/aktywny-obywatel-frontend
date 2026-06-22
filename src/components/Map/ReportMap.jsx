@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import debounce from 'lodash.debounce';
@@ -18,7 +18,9 @@ const MapResizer = () => {
 
 const BoundingBoxListener = ({ onBoundsChange }) => {
     const callbackRef = useRef(onBoundsChange);
-    callbackRef.current = onBoundsChange;
+    useEffect(() => {
+        callbackRef.current = onBoundsChange;
+    }, [onBoundsChange]);
 
     const map = useMapEvents({
         moveend: () => {
@@ -41,7 +43,6 @@ const BoundingBoxListener = ({ onBoundsChange }) => {
             minLng: bounds.getSouthWest().lng,
             maxLng: bounds.getNorthEast().lng,
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [map]);
 
     return null;

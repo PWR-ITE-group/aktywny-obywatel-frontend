@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Container, Box, Tabs, Tab, Paper, Stack, Typography, Button, Chip, TextField,
     Table, TableHead, TableBody, TableRow, TableCell, IconButton, Select, MenuItem,
@@ -75,8 +75,9 @@ const ReportsTab = () => {
             setError(null);
             try {
                 const filters = {};
-                // if (statusFilter) filters.status = statusFilter;
-                // if (query) filters.search = query;
+                if (statusFilter) filters.status = statusFilter;
+                if (query) filters.search = query;
+                if (sortOrder) filters.sortOrder = sortOrder;
                 const response = await adminService.getAllReports(filters, page, rowsPerPage);
                 setReports(response.content);
                 setTotalElements(response.totalElements);
@@ -89,7 +90,7 @@ const ReportsTab = () => {
         };
 
         fetchReports();
-    }, [query, statusFilter, page, rowsPerPage]);
+    }, [query, statusFilter, sortOrder, page, rowsPerPage]);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -100,43 +101,29 @@ const ReportsTab = () => {
         setPage(0);
     };
 
-    const filtered = useMemo(() => {
-        let result = reports.filter((r) => {
-            if (statusFilter && r.status !== statusFilter) return false;
-            if (query && !r.title.toLowerCase().includes(query.toLowerCase())) return false;
-            return true;
-        });
-
-        result.sort((a, b) => {
-            const dateA = new Date(a.createdAt || 0).getTime();
-            const dateB = new Date(b.createdAt || 0).getTime();
-            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-        });
-
-        return result;
-    }, [reports, query, statusFilter, sortOrder]);
-
     const exportCSV = async () => {
         try {
             const filters = {};
             if (statusFilter) filters.status = statusFilter;
             if (query) filters.search = query;
             const response = await adminService.exportReportsCSV(filters);
-            const blob = new Blob([response.csvContent], { type: 'text/csv;charset=utf-8' });
+            const blob = response instanceof Blob 
+                ? response 
+                : new Blob([response.csvContent || response], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `zgloszenia_${new Date().toISOString().slice(0, 10)}.csv`;
             a.click();
             URL.revokeObjectURL(url);
-            toast.success(`Wyeksportowano ${filtered.length} zgłoszeń.`);
+            toast.success(`Wyeksportowano ${totalElements} zgłoszeń.`);
         } catch (err) {
             toast.error('Nie udało się wyeksportować zgłoszeń.');
             console.error('Error exporting CSV:', err);
         }
     };
 
-    const updateComplaint = async (id, updatedData) => {
+    const _updateComplaint = async (id, updatedData) => {
         try {
             // We can check if it's just a status change or full update
             // But since adminService.updateReportStatus uses /status, we might need a generic update
@@ -147,7 +134,7 @@ const ReportsTab = () => {
             // This is just UI state update
             setReports(prev => prev.map(r => r.id === id ? { ...r, ...updatedData } : r));
             setEditDialog(null);
-        } catch (err) {
+        } catch {
             toast.error('Nie udało się zaktualizować zgłoszenia.');
         }
     };
@@ -158,7 +145,7 @@ const ReportsTab = () => {
             await adminService.deleteReport(id);
             toast.success('Zgłoszenie zostało usunięte.');
             setReports(prev => prev.filter(r => r.id !== id));
-        } catch (err) {
+        } catch {
             toast.error('Nie udało się usunąć zgłoszenia.');
         }
     };
@@ -224,7 +211,10 @@ const ReportsTab = () => {
                     <Select
                         value={sortOrder}
                         label="Sortowanie"
-                        onChange={(e) => setSortOrder(e.target.value)}
+                        onChange={(e) => {
+                            setSortOrder(e.target.value);
+                            setPage(0);
+                        }}
                     >
                         <MenuItem value="desc">Od najnowszych</MenuItem>
                         <MenuItem value="asc">Od najstarszych</MenuItem>
@@ -371,7 +361,7 @@ const ReportsTab = () => {
                                     statusColor: STATUS_COLORS[editDialog.status] || '#9E9E9E'
                                 } : r));
                                 setEditDialog(null);
-                            } catch (err) {
+                            } catch {
                                 toast.error('Nie udało się zapisać zmian.');
                             }
                         }}
@@ -649,7 +639,7 @@ const DepartmentsTab = () => {
                     {departments.map((d) => (
                         <TableRow key={d.id}>
                             <TableCell>{d.name}</TableCell>
-                            <TableCell>{d.email}</TableCell>
+                            <TableCell>{d.email || <i style={{ color: '#9CA3AF' }}>brak</i>}</TableCell>
                             <TableCell sx={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {d.apiUrl || <i style={{ color: '#9CA3AF' }}>brak — użyje email</i>}
                             </TableCell>
@@ -787,9 +777,9 @@ const StatsTab = () => {
         <Stack spacing={2}>
             <Grid container spacing={2}>
                 <StatCard label="Wszystkie zgłoszenia" value={stats.total} />
-                <StatCard label="W realizacji" value={stats.byStatus.find(s => s.status === 'w realizacji')?.count ?? 0} />
-                <StatCard label="Zakończone" value={stats.byStatus.find(s => s.status === 'zakończone')?.count ?? 0} />
-                <StatCard label="Odrzucone" value={stats.byStatus.find(s => s.status === 'odrzucone')?.count ?? 0} color="error.main" />
+                <StatCard label="W realizacji" value={stats.byStatus.find(s => s.status === 'IN_PROGRESS')?.count ?? 0} />
+                <StatCard label="Zakończone" value={stats.byStatus.filter(s => s.status === 'RESOLVED' || s.status === 'ARCHIVED').reduce((acc, curr) => acc + curr.count, 0)} />
+                <StatCard label="Nowe / Przekazane" value={stats.byStatus.filter(s => s.status === 'NEW' || s.status === 'ROUTED').reduce((acc, curr) => acc + curr.count, 0)} color="warning.main" />
             </Grid>
 
             <Paper sx={{ p: 2 }}>

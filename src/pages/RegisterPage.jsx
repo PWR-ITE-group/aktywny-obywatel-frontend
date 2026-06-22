@@ -8,6 +8,7 @@ import {
 import { Visibility, VisibilityOff, PersonAddOutlined } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { formatName } from '../utils/formatters';
 
 const RegisterPage = () => {
     const [form, setForm] = useState({ email: '', phone: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
@@ -15,7 +16,7 @@ const RegisterPage = () => {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
-    const { login, register } = useAuth();
+    const { register } = useAuth();
     const navigate = useNavigate();
 
     const validate = () => {
@@ -39,7 +40,11 @@ const RegisterPage = () => {
     };
 
     const handleChange = (field) => (e) => {
-        setForm((prev) => ({ ...prev, [field]: e.target.value }));
+        let value = e.target.value;
+        if (field === 'firstName' || field === 'lastName') {
+            value = formatName(value);
+        }
+        setForm((prev) => ({ ...prev, [field]: value }));
         if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
     };
 

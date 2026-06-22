@@ -1,6 +1,6 @@
 import api from '../config/api';
 
-const useMock = () => localStorage.getItem('token') === 'mock.jwt.token';
+const isMockMode = () => localStorage.getItem('token') === 'mock.jwt.token';
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 export const adminService = {
@@ -42,11 +42,11 @@ export const adminService = {
   },
 
   async exportReportsCSV(filters = {}) {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return { csvContent: 'id,title,category,status,lat,lng,createdAt\n1,Test,Drogi i chodniki,złożone,51.1079,17.0385,2026-04-10' };
     }
-    const { data } = await api.get('/api/admin/reports/export', {
+    const { data } = await api.get('/api/admin/complaints/export', {
       params: filters,
       responseType: 'blob'
     });
@@ -55,7 +55,7 @@ export const adminService = {
 
   // Routing management
   async getRoutingRules() {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       const { CATEGORIES } = await import('../config/mapConfig');
       return CATEGORIES.map(category => ({
@@ -69,7 +69,7 @@ export const adminService = {
   },
 
   async updateRoutingRules(rules) {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return {};
     }
@@ -79,7 +79,7 @@ export const adminService = {
 
   // Departments management
   async getDepartments() {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return [
         { id: 1, name: 'ZDiUM', email: 'zdium@um.wroc.pl', apiUrl: 'https://mock-urzad.local/zdium' },
@@ -92,7 +92,7 @@ export const adminService = {
   },
 
   async createDepartment(departmentData) {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return { ...departmentData, id: Date.now() };
     }
@@ -101,7 +101,7 @@ export const adminService = {
   },
 
   async updateDepartment(id, departmentData) {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return {};
     }
@@ -110,7 +110,7 @@ export const adminService = {
   },
 
   async deleteDepartment(id) {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return {};
     }
@@ -125,7 +125,7 @@ export const adminService = {
 
   // Statistics
   async getStats() {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       const { MOCK_REPORTS, STATUS_LABELS } = await import('../config/mapConfig');
 
@@ -158,9 +158,18 @@ export const adminService = {
     // Map backend array to UI expected format
     const total = data.reduce((sum, item) => sum + item.totalComplaints, 0);
     
+    const complaintsRes = await api.get('/api/admin/complaints', { params: { page: 0, size: 10000 } });
+    const complaints = complaintsRes.data.content;
+    
+    const byStatusObj = {};
+    complaints.forEach(item => {
+      const status = item.complaint.status;
+      byStatusObj[status] = (byStatusObj[status] || 0) + 1;
+    });
+
     return {
       total,
-      byStatus: [], // Not supported by current backend API
+      byStatus: Object.entries(byStatusObj).map(([status, count]) => ({ status, count })),
       byCategory: data.map(item => ({
         category: item.category,
         count: item.totalComplaints,
@@ -171,7 +180,7 @@ export const adminService = {
 
   // Users management
   async getUsers(filters = {}) {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return [
         { id: 1, email: 'jan.kowalski@aktywnyobywatel.pl', createdAt: '2026-01-15', reports: 3, role: 'user' },
@@ -188,7 +197,7 @@ export const adminService = {
   },
 
   async deleteUser(id) {
-    if (useMock()) {
+    if (isMockMode()) {
       await delay(500);
       return {};
     }

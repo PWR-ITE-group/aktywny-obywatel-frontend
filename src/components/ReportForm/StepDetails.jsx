@@ -8,7 +8,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { DESCRIPTION_MAX, PHOTO_LIMITS, validateNewPhotos, descriptionSchema } from '../../utils/reportSchemas';
 
-const StepDetails = ({ description, photos, priority, onChange }) => {
+const StepDetails = ({ title, description, photos, urgent, onChange }) => {
     const inputRef = useRef(null);
     const [uploadErrors, setUploadErrors] = useState([]);
     const [descError, setDescError] = useState(null);
@@ -20,6 +20,7 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
             name: p instanceof File ? p.name : p.name ?? 'zdjecie',
             size: p instanceof File ? p.size : p.size ?? 0,
         }));
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPreviews(urls);
         return () => {
             urls.forEach((u) => {
@@ -57,7 +58,10 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
     };
 
     const remaining = DESCRIPTION_MAX - description.length;
-    const canAddMore = photos.length < PHOTO_LIMITS.MAX_COUNT;
+
+
+    const isForcedUrgent = /pilne/i.test(description || '') || /pilne/i.test(title || '');
+    const effectiveUrgent = urgent || isForcedUrgent;
 
     return (
         <Stack spacing={3}>
@@ -92,6 +96,28 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
                         },
                     }}
                 />
+                <Button
+                    variant={effectiveUrgent ? "contained" : "outlined"}
+                    color="error"
+                    onClick={() => {
+                        if (!isForcedUrgent) {
+                            onChange({ urgent: !effectiveUrgent });
+                        }
+                    }}
+                    startIcon={<PriorityHighIcon />}
+                    sx={{ mt: 2, borderRadius: 2, py: 1.5, fontWeight: 'bold' }}
+                    fullWidth
+                    disableElevation
+                >
+                    {effectiveUrgent ? 'Zgłoszenie oznaczone jako Pilne' : 'Oznacz jako Pilne Zgłoszenie'}
+                </Button>
+                {effectiveUrgent && (
+                    <Alert severity="error" sx={{ mt: 1.5, borderRadius: 2, '& .MuiAlert-message': { width: '100%' } }}>
+                        <strong>Uwaga!</strong> Aplikacja nie służy do zgłaszania nagłych wypadków. 
+                        W przypadku bezpośredniego zagrożenia życia lub zdrowia natychmiast zadzwoń pod numer alarmowy{' '}
+                        <a href="tel:112" style={{ fontWeight: 'bold', color: 'inherit', textDecoration: 'underline' }}>112</a>.
+                    </Alert>
+                )}
             </Box>
 
             <Box>
@@ -111,62 +137,78 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
                     onChange={handleFiles}
                 />
 
-                <Grid container spacing={1.5}>
-                    {previews.map((p, idx) => (
-                        <Grid item xs={6} sm={4} key={idx}>
-                            <Box
-                                sx={{
-                                    position: 'relative',
-                                    pt: '75%',
-                                    borderRadius: 2,
-                                    overflow: 'hidden',
-                                    backgroundImage: `url(${p.url})`,
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
-                                    bgcolor: 'grey.100',
-                                }}
-                            >
-                                <IconButton
-                                    size="small"
-                                    onClick={() => removePhoto(idx)}
+                <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
+                    {[0, 1, 2].map((idx) => {
+                        const p = previews[idx];
+                        if (p) {
+                            return (
+                                <Box
+                                    key={idx}
                                     sx={{
-                                        position: 'absolute',
-                                        top: 4, right: 4,
-                                        bgcolor: 'rgba(255,255,255,0.9)',
-                                        '&:hover': { bgcolor: 'white' },
+                                        flex: 1,
+                                        aspectRatio: '1 / 1',
+                                        position: 'relative',
+                                        borderRadius: 2,
+                                        overflow: 'hidden',
+                                        backgroundImage: `url(${p.url})`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        bgcolor: 'grey.100',
                                     }}
-                                    aria-label={`Usuń zdjęcie ${idx + 1}`}
                                 >
-                                    <DeleteOutlineIcon fontSize="small" />
-                                </IconButton>
-                            </Box>
-                            <Typography variant="caption" color="text.secondary" noWrap display="block">
-                                {p.name}
-                            </Typography>
-                        </Grid>
-                    ))}
-                    {canAddMore && (
-                        <Grid item xs={6} sm={4}>
-                            <Button
-                                onClick={() => inputRef.current?.click()}
-                                variant="outlined"
-                                sx={{
-                                    width: '100%',
-                                    pt: '37%', pb: '37%',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    borderStyle: 'dashed',
-                                    borderWidth: 2,
-                                }}
-                            >
-                                <AddPhotoAlternateOutlinedIcon />
-                                <Typography variant="caption" sx={{ mt: 0.5 }}>
-                                    Dodaj zdjęcie
-                                </Typography>
-                            </Button>
-                        </Grid>
-                    )}
-                </Grid>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => removePhoto(idx)}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 8, right: 8,
+                                            bgcolor: 'rgba(255,255,255,0.9)',
+                                            '&:hover': { bgcolor: 'white' },
+                                            boxShadow: 1,
+                                        }}
+                                        aria-label={`Usuń zdjęcie ${idx + 1}`}
+                                    >
+                                        <DeleteOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                    <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, bgcolor: 'rgba(0,0,0,0.6)', p: 0.5 }}>
+                                        <Typography variant="caption" color="white" noWrap display="block" sx={{ textAlign: 'center' }}>
+                                            {p.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            );
+                        } else {
+                            return (
+                                <Button
+                                    key={idx}
+                                    onClick={() => inputRef.current?.click()}
+                                    variant="outlined"
+                                    sx={{
+                                        flex: 1,
+                                        aspectRatio: '1 / 1',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        borderStyle: 'dashed',
+                                        borderWidth: 2,
+                                        borderRadius: 2,
+                                        color: 'text.secondary',
+                                        borderColor: 'divider',
+                                        '&:hover': {
+                                            borderColor: 'primary.main',
+                                            color: 'primary.main',
+                                            bgcolor: 'primary.50'
+                                        }
+                                    }}
+                                >
+                                    <AddPhotoAlternateOutlinedIcon sx={{ fontSize: 32, mb: 1 }} />
+                                    <Typography variant="body2" sx={{ textAlign: 'center', fontWeight: 600 }}>
+                                        Dodaj<br/>zdjęcie
+                                    </Typography>
+                                </Button>
+                            );
+                        }
+                    })}
+                </Box>
 
                 {uploadErrors.length > 0 && (
                     <Alert severity="warning" sx={{ mt: 1.5 }} onClose={() => setUploadErrors([])}>
@@ -179,44 +221,6 @@ const StepDetails = ({ description, photos, priority, onChange }) => {
                 )}
             </Box>
 
-            {/* Priorytet */}
-            <Box
-                sx={{
-                    border: '1px solid',
-                    borderColor: priority ? 'error.main' : 'divider',
-                    borderRadius: 2,
-                    p: 2,
-                    bgcolor: priority ? 'error.50' : 'background.paper',
-                    transition: 'all 0.2s',
-                }}
-            >
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={Boolean(priority)}
-                            onChange={(e) => onChange({ priority: e.target.checked })}
-                            color="error"
-                            icon={<PriorityHighIcon sx={{ color: 'action.disabled' }} />}
-                            checkedIcon={<PriorityHighIcon sx={{ color: 'error.main' }} />}
-                        />
-                    }
-                    label={
-                        <Box>
-                            <Typography variant="body2" fontWeight={600}>
-                                Zgłoszenie pilne
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Zaznacz jeśli problem stanowi bezpośrednie zagrożenie lub wymaga natychmiastowej reakcji.
-                            </Typography>
-                        </Box>
-                    }
-                />
-                {priority && (
-                    <Alert severity="warning" icon={<PriorityHighIcon />} sx={{ mt: 1.5 }}>
-                        Poprosimy odbiorcę o pilny kontakt. Średni czas odpowiedzi w takich przypadkach wynosi około 3 godzin.
-                    </Alert>
-                )}
-            </Box>
         </Stack>
     );
 };
